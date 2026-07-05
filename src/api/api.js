@@ -1,4 +1,4 @@
-const baseUrl = "http://localhost:7018/api";
+const baseUrl = "http://localhost:5185/api";
 
 const AUTH_SESSION_EXPIRED_EVENT = "auth:session_expired";
 const REFRESH_ENDPOINT = "/Auth/refresh-token";
@@ -45,6 +45,11 @@ async function requestWithAuthRetry(path, options = {}, config = {}) {
 
 async function rawRequest(path, options = {}) {
     const requestUrl = `${baseUrl}${path}`;
+    const hasFormDataBody = typeof FormData !== 'undefined' && options.body instanceof FormData;
+    const headers = {
+        ...options.headers,
+        ...(hasFormDataBody ? {} : { 'Content-Type': 'application/json' }),
+    };
 
     try {
         const response = await fetch(requestUrl, {
@@ -88,7 +93,7 @@ async function rawRequest(path, options = {}) {
     }
 }
 
-async function authRequest(path, options = {}) {
+async function authRequest(path, options = {}, config = {}) {
     return requestWithAuthRetry(path, options, undefined, config);
 }
 
@@ -96,10 +101,10 @@ async function refreshAccessToken() {
     if (!refreshPromise) {
         refreshPromise = (async () => {
             try {
-                await authRequest(REFRESH_ENDPOINT, {method:'POST'}, { skipAuthRetry: true });
+                await authRequest(REFRESH_ENDPOINT, { method: 'POST' }, { skipAuthRetry: true });
                 return true;
-            }catch (error) {
-                if(error?.status === 400 || error?.status === 401 || error?.status === 404) {
+            } catch (error) {
+                if (error?.status === 400 || error?.status === 401 || error?.status === 404) {
                     return false;
                 }
                 throw error;
@@ -107,27 +112,27 @@ async function refreshAccessToken() {
         })();
     }
 
-    try{
+    try {
         return await refreshPromise;
     } finally {
         refreshPromise = null;
     }
 }
 
-export const authApi={
-    login: (body) => authRequest("/Auth/login", {method: 'POST', body: JSON.stringify(body) },{ skipAuthRetry: true }),
+export const authApi = {
+    login: (body) => authRequest("/Auth/login", { method: 'POST', body: JSON.stringify(body) }, { skipAuthRetry: true }),
 
-    register: (body) => authRequest("/Auth/register", {method: 'POST', body: JSON.stringify(body) },{ skipAuthRetry: true }),
+    register: (body) => authRequest("/Auth/register", { method: 'POST', body: JSON.stringify(body) }, { skipAuthRetry: true }),
 
-    logout: () => authRequest("/Auth/logout", {method: 'POST' }),
+    logout: () => authRequest("/Auth/logout", { method: 'POST' }),
 
-    refresh: () => authRequest(REFRESH_ENDPOINT, {method: 'POST' },{ skipAuthRetry: true }),
+    refresh: () => authRequest(REFRESH_ENDPOINT, { method: 'POST' }, { skipAuthRetry: true }),
 
     getCurrentUser: async () => {
-        return authRequest('/Auth/me',{},{ skipAuthRetry: true });
+        return authRequest('/Auth/me', {}, { skipAuthRetry: true });
     },
 };
 
 export const userApi = {
-    getByEmail:(email) => request(`/Users/email/${encodeURIComponent(email)}`, {method: 'GET' }),
+    getByEmail: (email) => request(`/v1/User/${encodeURIComponent(email)}`, { method: 'GET' }),
 }

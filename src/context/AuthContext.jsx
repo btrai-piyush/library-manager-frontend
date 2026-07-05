@@ -12,21 +12,31 @@ function AuthProvider({ children }) {
     const user = useSelector((state) => state.auth.user);
 
     useEffect(() => {
-        const storedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY);
-        if (storedUser) {
-            dispatch(setSession({ user: JSON.parse(storedUser) }));
+        try {
+            const storedUser = localStorage.getItem(AUTH_USER_STORAGE_KEY);
+            if (storedUser) {
+                const parsedUser = JSON.parse(storedUser);
+                dispatch(setSession({ user: parsedUser }));
+            }
+        } catch (error) {
+            console.error("Failed to load stored user:", error);
+            localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }, [dispatch]);
 
-    const login = async (username, password) => {
+    const login = (userData) => {
         try {
-            const response = await authApi.login(username, password);
-            if (response && response.user) {
-                dispatch(setSession({ user: response.user }));
-                localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(response.user));
+            if (!userData) {
+                throw new Error("User data is required");
             }
-            return response;
+            
+            dispatch(setSession({ user: userData }));
+            
+            localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(userData));
+            
+            return userData;
         } catch (error) {
             console.error("Login failed:", error);
             throw error;
@@ -35,8 +45,14 @@ function AuthProvider({ children }) {
 
     const logout = async () => {
         try {
-            await authApi.logout();
+            try {
+                await authApi.logout();
+            } catch (error) {
+                console.warn("Logout API call failed:", error);
+            }
+            
             dispatch(clearSession());
+            
             localStorage.removeItem(AUTH_USER_STORAGE_KEY);
         } catch (error) {
             console.error("Logout failed:", error);
@@ -52,7 +68,11 @@ function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error("useAuth must be used within an AuthProvider");
+    }
+    return context;
 }
 
 export default AuthProvider;
