@@ -1,4 +1,4 @@
-import useState from "react";
+import { useState,useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { authApi, userApi } from "../api/api";
@@ -7,26 +7,84 @@ import { useDispatch, useSelector } from "react-redux";
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    rememberMe: false
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("librarymanager.auth.user");
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      console.log("Found stored user:", parsedUser);
+      if (parsedUser.role === 'admin') {
+        navigate('/admin/dashboard');
+      }
+      else if (parsedUser.role === 'user') {
+        navigate('/user/dashboard');
+      }
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
       await authApi.login({
         email: form.email,
-        password: form.password
+        password: form.password,
+        rememberMe: form.rememberMe
       });
 
-      const meResponse=await authApi.getCurrentUser();
-      const meUser=meResponse.user;
+      const meUser = await authApi.getCurrentUser();
 
-      if(!meUser){
-        
+      console.log("Fetched user data after login:", meUser);
+
+      if (!meUser) {
+        throw new Error("Failed to fetch user data after login.");
+      }
+
+      let userData = meUser;
+      const meEmail = meUser.email;
+      if (meEmail) {
+        try {
+          const profile = await userApi.getByEmail(meEmail);
+          if (profile) {
+            userData = { ...meUser, ...profile, email: meEmail, role: profile.role };
+          }
+        } catch (err) {
+          console.error("Failed to fetch user profile:", err);
+        }
+      }
+
+      if (!userData) {
+        throw new Error("User data is not available.");
+      }
+
+      login(userData);
+
+      setForm({ email: '', password: '' });
+
+      if (typeof onSuccess === 'function') {
+        onSuccess(userData);
+      }
+
+      if (meUser.role === 'admin') {
+        navigate('/admin/dashboard');
+      }
+      else if (meUser.role === 'user') {
+        navigate('/user/dashboard');
       }
     } catch (error) {
+      setError("Login failed. Please try again.");
       console.error("Login failed:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -78,6 +136,7 @@ export default function Login() {
                     required
                     autoComplete="email"
                     placeholder="you@example.com"
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
                     className="block w-full rounded-xl border-0 bg-white/10 px-4 py-2.5 sm:py-3 text-white placeholder:text-white/40 shadow-sm ring-1 ring-inset ring-white/20 focus:ring-2 focus:ring-inset focus:ring-indigo-400 outline-none transition-all duration-200 text-sm sm:text-base"
                   />
                 </div>
@@ -91,12 +150,6 @@ export default function Login() {
                   >
                     Password
                   </label>
-                  <a
-                    href="#"
-                    className="text-xs sm:text-sm font-medium text-indigo-300 hover:text-indigo-200 transition-colors duration-200"
-                  >
-                    Forgot password?
-                  </a>
                 </div>
                 <div className="mt-1.5">
                   <input
@@ -107,19 +160,38 @@ export default function Login() {
                     required
                     autoComplete="current-password"
                     placeholder="••••••••"
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
                     className="block w-full rounded-xl border-0 bg-white/10 px-4 py-2.5 sm:py-3 text-white placeholder:text-white/40 shadow-sm ring-1 ring-inset ring-white/20 focus:ring-2 focus:ring-inset focus:ring-indigo-400 outline-none transition-all duration-200 text-sm sm:text-base"
                   />
                 </div>
               </div>
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex cursor-pointer items-center gap-2 text-[14px] text-[#4b5563]">
+                  <input
+                    type="checkbox"
+                    checked={form.rememberMe}
+                    onChange={(e) => setForm({ ...form, rememberMe: e.target.checked })}
+                    className="h-4 w-4 rounded border-[#cbd5e1] text-[#baec16] focus:ring-[#ff5a5f]"
+                  />
+                  <span className="text-white">Remember me</span>
+                </label>
+                <a href="#" className="text-[14px] text-[#eeeef5] transition hover:text-[#7170d8]">Lost your password?</a>
+              </div>
               <div className="pt-2">
                 <button
                   type="submit"
+                  disabled={loading}
                   className="group relative w-full flex justify-center rounded-xl bg-linear-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
                 >
                   <span className="absolute inset-0 rounded-xl bg-white/0 group-hover:bg-white/5 transition-colors duration-200" />
-                  Sign in
+                  {loading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
+              {error && (
+                <div className="text-red-500 text-sm sm:text-base mt-2">
+                  {error}
+                </div>
+              )}
             </form>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import {createSlice} from "@reduxjs/toolkit";
 
-const AUTH_USER_STORAGE_KEY = "library.manager.auth.user";
+const AUTH_USER_STORAGE_KEY = "librarymanager.auth.user";
 
 function writeStoredUser(user){
     if (typeof window === 'undefined') return;
