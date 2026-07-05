@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleSidebar } from '../../redux/sidebarSlice';
+import {useNavigate} from "react-router-dom";
 
 const getStoredUser = () => {
     try {
@@ -28,6 +29,7 @@ const Navbar = ({ navlinks = [] }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dispatch = useDispatch();
     const sidebarOpen = useSelector((state) => state.sidebar.sidebarOpen);
+    const navigate = useNavigate();
 
 
     useEffect(() => {
@@ -41,28 +43,28 @@ const Navbar = ({ navlinks = [] }) => {
 
     const handleSignOut = () => {
         localStorage.removeItem('librarymanager.auth.user');
-        window.location.href = '/login';
+        navigate('/login');
     };
 
     const handleProfileSettings = () => {
         setIsMobileMenuOpen(false);
         setIsDropdownOpen(false);
         if (currentUserRole === 'admin' || currentUserRole === 'librarian') {
-            window.location.href = '/admin/my-profile';
+            navigate('/admin/my-profile');
         } else {
-            window.location.href = '/dashboard';
+            navigate('/dashboard');
         }
     };
 
     const handleDashboard = () => {
         setIsMobileMenuOpen(false);
         setIsDropdownOpen(false);
-        window.location.href = '/admin/dashboard';
+        navigate('/admin/dashboard');
     };
 
     const handleNavigation = (path) => {
         setIsMobileMenuOpen(false);
-        window.location.href = path;
+        navigate(path);
     };
 
     const ProfileDropdown = () => (
