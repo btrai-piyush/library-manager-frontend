@@ -16,6 +16,9 @@ export function PublicRoute({ children }) {
             return <Navigate to="/admin" replace />;
         }
     }
+    else {
+        return <Navigate to="/login" replace />;
+    }
 
     return children;
 }
