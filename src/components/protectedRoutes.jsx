@@ -15,9 +15,9 @@ export function PublicRoute({ children }) {
         else if (user.role === "admin") {
             return <Navigate to="/admin" replace />;
         }
-    }
-    else {
-        return <Navigate to="/login" replace />;
+        else {
+            return <Navigate to="/login" replace />;
+        }
     }
 
     return children;
