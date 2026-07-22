@@ -12,6 +12,7 @@ async function request(path, options = {}) {
 function notifySessionExpired() {
     if (typeof window === 'undefined') return;
 
+    console.log("SESSION EXPIRED");
     window.dispatchEvent(new CustomEvent(AUTH_SESSION_EXPIRED_EVENT));
 }
 
@@ -23,13 +24,24 @@ async function requestWithAuthRetry(path, options = {}, config = {}) {
     } catch (error) {
         const isAuthRefreshEndPoint = String(path).toLowerCase() === REFRESH_ENDPOINT.toLowerCase();
         if (skipAuthRetry || isAuthRefreshEndPoint || error.status !== 401) {
+            console.log("Request failed and will not retry:", error);
             throw error;
         }
 
-        const refreshResult = await refreshAccessToken();
-        if (!refreshResult) {
+        let refreshSucceeded = false;
+        try {
+            refreshSucceeded = await refreshAccessToken();
+            console.log("Token refresh result:", refreshSucceeded);
+        } catch (_) {
+            // refresh failed unexpectedly – treat as failure
+            console.error("Token refresh failed unexpectedly");
+            refreshSucceeded = false;
+        }
+
+        if (!refreshSucceeded) {
             notifySessionExpired();
-            throw error;
+            console.log("Session expired, notifying and throwing error");
+            throw error;   // re-throw the original request error
         }
 
         try {
@@ -94,7 +106,7 @@ async function rawRequest(path, options = {}) {
 }
 
 async function authRequest(path, options = {}, config = {}) {
-    return requestWithAuthRetry(path, options, undefined, config);
+    return requestWithAuthRetry(path, options, config);
 }
 
 async function refreshAccessToken() {
@@ -104,10 +116,8 @@ async function refreshAccessToken() {
                 await authRequest(REFRESH_ENDPOINT, { method: 'POST' }, { skipAuthRetry: true });
                 return true;
             } catch (error) {
-                if (error?.status === 400 || error?.status === 401 || error?.status === 404) {
-                    return false;
-                }
-                throw error;
+
+                return false;
             }
         })();
     }
@@ -124,7 +134,7 @@ export const authApi = {
 
     register: (body) => authRequest("/Auth/register", { method: 'POST', body: JSON.stringify(body) }, { skipAuthRetry: true }),
 
-    logout: () => authRequest("/Auth/logout", { method: 'POST' }),
+    logout: () => authRequest("/Auth/logout", { method: 'GET' }),
 
     refresh: () => authRequest(REFRESH_ENDPOINT, { method: 'POST' }, { skipAuthRetry: true }),
 
@@ -136,3 +146,71 @@ export const authApi = {
 export const userApi = {
     getByEmail: (email) => request(`/v1/User/${encodeURIComponent(email)}`, { method: 'GET' }),
 }
+
+export const bookApi = {
+    getFiltered: async (filters) => {
+        try {
+            return await request(`/v1/Book/get-all-user?${new URLSearchParams(filters).toString()}`, { method: 'GET' });
+        } catch (error) {
+            console.error('Error fetching filtered books:', error);
+            throw error;
+        }
+    }
+}
+
+export const wishlistApi = {
+    addToWishlist: (body) => request(`/v1/Wishlist/add`, { method: 'POST', body: JSON.stringify(body) }),
+
+    removeFromWishlist: (body) => request(`/v1/Wishlist/remove`, { method: 'DELETE', body: JSON.stringify(body) }),
+
+    getWishlist: (userId) => request(`/v1/Wishlist?userId=${userId}`, { method: 'GET' }),
+}
+
+export const bookRequestApi = {
+    requestBook: (body) => request(`/v1/BookRequest`, { method: 'POST', body: JSON.stringify(body) }),
+
+    getRequestedBooks: (userId) => request(`/v1/BookRequest?userId=${userId}`, { method: 'GET' }),
+
+    undoBookRequest: (book) => request(`/v1/BookRequest/undo`, { method: 'POST', body: JSON.stringify(book) }),
+
+    getAll: (body) => request(`/v1/BookRequest/get-all`, { method: 'POST',body: JSON.stringify(body)}),
+
+    approveRequest: (requestId) =>
+        request(`/v1/BookRequest/approve?requestId=${requestId}`, {
+            method: 'POST',
+        }),
+
+    rejectRequest: (requestId) =>
+        request(`/v1/BookRequest/reject?requestId=${requestId}`, {
+            method: 'GET',
+        }),
+}
+
+export const bookIssueApi = {
+    getBorrowedBooks: (userId) => request(`/v1/Borrow?userId=${userId}`, { method: 'GET' }),
+
+    returnBook: (body) => request(`/v1/Borrow/return`, { method: 'POST', body: JSON.stringify(body) }),
+
+    getAllIssuedBooks: (body) => request(`/v1/BookIssue/get-all`, { method: 'POST',body: JSON.stringify(body)}),
+
+    getBorrowedBooksByUser: (userId) => request(`/v1/BookIssue/get-by-user?userId=${userId}`, { method: 'GET' }),
+
+    issueBook: ({ requestId, dueDate }) =>
+        request(`/v1/BookIssue/issue`, {
+            method: 'POST',
+            body: JSON.stringify({ requestId, dueDate }),
+        }),
+
+    returnBook: (bookIssueId) =>
+        request(`/v1/BookIssue/return?issueId=${bookIssueId}`, {
+            method: 'PATCH',
+        }),
+}
+
+export const fineApi = {
+    getFinesByUser: (userId) => request(`/v1/Fine?userId=${userId}`, { method: 'GET' }),
+
+    payFine: (fineId) => request(`/v1/Fine/pay?fineId=${fineId}`, { method: 'POST' }),
+
+    getAllFines: (body) => request(`/v1/Fine/get-all`, { method: 'POST', body: JSON.stringify(body) }),
+};

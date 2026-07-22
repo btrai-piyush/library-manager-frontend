@@ -6,6 +6,8 @@ import { authApi } from "../api/api";
 const AuthContext = createContext(null);
 const AUTH_USER_STORAGE_KEY = "librarymanager.auth.user";
 
+const AUTH_SESSION_EXPIRED_EVENT = "auth:session_expired";
+
 function AuthProvider({ children }) {
     const dispatch = useDispatch();
     const [loading, setLoading] = useState(true);
@@ -50,15 +52,27 @@ function AuthProvider({ children }) {
             } catch (error) {
                 console.warn("Logout API call failed:", error);
             }
-            
             dispatch(clearSession());
-            
             localStorage.removeItem(AUTH_USER_STORAGE_KEY);
         } catch (error) {
             console.error("Logout failed:", error);
             throw error;
         }
     };
+
+    useEffect(() => {
+        const handleSessionExpired = async () => {
+            console.log("Session expired – logging out and redirecting");
+            await logout();
+            window.location.href = "/login";
+        };
+
+        window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+
+        return () => {
+            window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, handleSessionExpired);
+        };
+    }, []);
 
     return (
         <AuthContext.Provider value={{ user, loading, login, logout }}>

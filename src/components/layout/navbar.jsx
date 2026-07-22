@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleSidebar } from '../../redux/sidebarSlice';
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const getStoredUser = () => {
     try {
@@ -30,7 +31,7 @@ const Navbar = ({ navlinks = [] }) => {
     const dispatch = useDispatch();
     const sidebarOpen = useSelector((state) => state.sidebar.sidebarOpen);
     const navigate = useNavigate();
-
+    const { logout } = useAuth();
 
     useEffect(() => {
         const storedUser = getStoredUser();
@@ -42,7 +43,7 @@ const Navbar = ({ navlinks = [] }) => {
     }, []);
 
     const handleSignOut = () => {
-        localStorage.removeItem('librarymanager.auth.user');
+        logout();
         navigate('/login');
     };
 
