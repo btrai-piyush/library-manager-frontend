@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    dedupe: ['react', 'react-dom'] // <--- Add this line!
+    dedupe: ['react', 'react-dom']
   },
-  base: process.env.VITE_BASE_PATH || '/library-manager-frontend',
+  base: process.env.VITE_BASE_PATH || '/',
 })
