@@ -7,10 +7,10 @@ import {
   selectBooks,
   selectLoading,
   selectError,
-} from '../../redux/booksearchSlice';
-import Pagination from '../../components/pagination';
+} from '../../redux/BookSearchSlice';
+import Pagination from '../../components/Pagination';
 import { Eye, HeartPlus } from 'lucide-react';
-import { wishlistApi } from '../../api/api';
+import { wishlistApi } from '../../api/Api';
 import { toast } from 'react-toastify';
 
 const BookSearch = () => {

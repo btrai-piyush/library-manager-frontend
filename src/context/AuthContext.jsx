@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { clearSession, setSession } from "../redux/authSlice";
-import { authApi } from "../api/api";
+import { clearSession, setSession } from "../redux/AuthSlice";
+import { authApi } from "../api/Api";
 
 const AuthContext = createContext(null);
 const AUTH_USER_STORAGE_KEY = "librarymanager.auth.user";

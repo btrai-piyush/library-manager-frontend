@@ -1,6 +1,6 @@
 // booksearchSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { bookApi } from '../api/api';
+import { bookApi } from '../api/Api';
 
 const bookDefaultFilters = {
   searchTerm: '',

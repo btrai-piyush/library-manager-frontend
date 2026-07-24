@@ -1,6 +1,6 @@
 import React, { useEffect,useState } from 'react';
-import { wishlistApi } from '../../api/api';
-import Pagination from '../../components/pagination';
+import { wishlistApi } from '../../api/Api';
+import Pagination from '../../components/Pagination';
 
 export default function WishlistTable({ books }) {
     const [pageNumber, setPageNumber] = useState(appliedFilters.pageNumber || 1);

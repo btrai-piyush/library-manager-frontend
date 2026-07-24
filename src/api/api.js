@@ -1,4 +1,6 @@
-const baseUrl = "http://localhost:5185/api";
+// const baseUrl = "http://localhost:5185/api";
+// const baseUrl="http://apilibrarymanagement.runasp.net/api";
+const baseUrl = "/api";
 
 const AUTH_SESSION_EXPIRED_EVENT = "auth:session_expired";
 const REFRESH_ENDPOINT = "/Auth/refresh-token";
@@ -130,7 +132,12 @@ async function refreshAccessToken() {
 }
 
 export const authApi = {
-    login: (body) => authRequest("/Auth/login", { method: 'POST', body: JSON.stringify(body) }, { skipAuthRetry: true }),
+    login: (body) =>
+        authRequest("/Auth/login", {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify(body)
+        }, { skipAuthRetry: true }),
 
     register: (body) => authRequest("/Auth/register", { method: 'POST', body: JSON.stringify(body) }, { skipAuthRetry: true }),
 
@@ -139,12 +146,14 @@ export const authApi = {
     refresh: () => authRequest(REFRESH_ENDPOINT, { method: 'POST' }, { skipAuthRetry: true }),
 
     getCurrentUser: async () => {
-        return authRequest('/Auth/me', {}, { skipAuthRetry: true });
+        return authRequest('/Auth/me', { method: 'GET', credentials: 'include' }, { skipAuthRetry: true });
     },
 };
 
 export const userApi = {
     getByEmail: (email) => request(`/v1/User/${encodeURIComponent(email)}`, { method: 'GET' }),
+
+    getStudentDetails: (studentId) => request(`/v1/User/student-details/${studentId}`, { method: 'GET' }),
 }
 
 export const bookApi = {
@@ -173,7 +182,7 @@ export const bookRequestApi = {
 
     undoBookRequest: (book) => request(`/v1/BookRequest/undo`, { method: 'POST', body: JSON.stringify(book) }),
 
-    getAll: (body) => request(`/v1/BookRequest/get-all`, { method: 'POST',body: JSON.stringify(body)}),
+    getAll: (body) => request(`/v1/BookRequest/get-all`, { method: 'POST', body: JSON.stringify(body) }),
 
     approveRequest: (requestId) =>
         request(`/v1/BookRequest/approve?requestId=${requestId}`, {
@@ -184,6 +193,8 @@ export const bookRequestApi = {
         request(`/v1/BookRequest/reject?requestId=${requestId}`, {
             method: 'GET',
         }),
+
+        getRequestHistory: (body) => request(`/v1/BookRequest/user-history`, { method: 'POST', body: JSON.stringify(body) }),
 }
 
 export const bookIssueApi = {
@@ -191,9 +202,9 @@ export const bookIssueApi = {
 
     returnBook: (body) => request(`/v1/Borrow/return`, { method: 'POST', body: JSON.stringify(body) }),
 
-    getAllIssuedBooks: (body) => request(`/v1/BookIssue/get-all`, { method: 'POST',body: JSON.stringify(body)}),
+    getAllIssuedBooks: (body) => request(`/v1/BookIssue/get-all`, { method: 'POST', body: JSON.stringify(body) }),
 
-    getBorrowedBooksByUser: (userId) => request(`/v1/BookIssue/get-by-user?userId=${userId}`, { method: 'GET' }),
+    getBorrowedBooksByUser: (body) => request(`/v1/BookIssue/user`, { method: 'POST', body: JSON.stringify(body) }),
 
     issueBook: ({ requestId, dueDate }) =>
         request(`/v1/BookIssue/issue`, {
@@ -208,9 +219,13 @@ export const bookIssueApi = {
 }
 
 export const fineApi = {
-    getFinesByUser: (userId) => request(`/v1/Fine?userId=${userId}`, { method: 'GET' }),
+    getFinesByUser: (body) => request(`/v1/Fine/user-fines`, { method: 'POST', body: JSON.stringify(body) }),
 
-    payFine: (fineId) => request(`/v1/Fine/pay?fineId=${fineId}`, { method: 'POST' }),
+    payFine: (fineId) => request(`/v1/Fine/pay-fine?fineId=${fineId}`, { method: 'PATCH' }),
 
     getAllFines: (body) => request(`/v1/Fine/get-all`, { method: 'POST', body: JSON.stringify(body) }),
 };
+
+export const commonApi = {
+    userDashboardStats: (userId) => request(`/v1/common/user-dashboard/${userId}`, { method: 'GET' }),
+}

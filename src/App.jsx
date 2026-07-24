@@ -1,10 +1,10 @@
 import './App.css'
 import { Provider } from 'react-redux'
-import store  from './redux/store'
+import store  from './redux/Store'
 import AuthProvider from './context/AuthContext'
 import { RouterProvider } from 'react-router-dom'
-import router from './routes/routes'
-import Toast from './components/toast-container'
+import router from './routes/Routes'
+import Toast from './components/ToastContainer'
 
 function App() {
   return (

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { bookIssueApi } from '../../api/api';
+import { bookIssueApi } from '../../api/Api';
 import { Loader2, Search, Filter, RotateCcw } from 'lucide-react';
-import Pagination from '../../components/pagination';
+import Pagination from '../../components/Pagination';
 import { toast } from 'react-toastify';
 
 const PAGE_SIZE = 5;
