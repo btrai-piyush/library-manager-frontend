@@ -1,7 +1,7 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { authApi, userApi } from "../api/api";
+import { authApi, userApi } from "../api/Api";
 import { useDispatch, useSelector } from "react-redux";
 
 export default function Login() {
@@ -35,7 +35,7 @@ export default function Login() {
     setError(null);
 
     try {
-      await authApi.login({
+      const response = await authApi.login({
         email: form.email,
         password: form.password,
         rememberMe: form.rememberMe

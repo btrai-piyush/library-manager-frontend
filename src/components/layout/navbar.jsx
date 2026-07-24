@@ -8,7 +8,7 @@ import {
     X
 } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleSidebar } from '../../redux/sidebarSlice';
+import { toggleSidebar } from '../../redux/SidebarSlice';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
@@ -50,11 +50,7 @@ const Navbar = ({ navlinks = [] }) => {
     const handleProfileSettings = () => {
         setIsMobileMenuOpen(false);
         setIsDropdownOpen(false);
-        if (currentUserRole === 'admin' || currentUserRole === 'librarian') {
-            navigate('/admin/my-profile');
-        } else {
-            navigate('/dashboard');
-        }
+         navigate(`/${user?.role}/profile`);
     };
 
     const handleDashboard = () => {

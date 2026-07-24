@@ -1,7 +1,7 @@
 import {configureStore} from "@reduxjs/toolkit";
-import authReducer from "./authSlice";
-import sidebarReducer from "./sidebarSlice";
-import booksearchReducer from "./booksearchSlice";
+import authReducer from "./AuthSlice";
+import sidebarReducer from "./SidebarSlice";
+import booksearchReducer from "./BookSearchSlice";
 
 const store = configureStore({
     reducer: {

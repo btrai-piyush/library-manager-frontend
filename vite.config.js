@@ -8,5 +8,6 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom']
   },
-  base: process.env.VITE_BASE_PATH || '/',
+  // base: process.env.VITE_BASE_PATH || '/',
+  base: "/"
 })

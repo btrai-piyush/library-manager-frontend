@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { fineApi } from '../../api/api';
+import { fineApi } from '../../api/Api';
 import { Loader2, Search, Filter, CheckCircle } from 'lucide-react';
-import Pagination from '../../components/pagination';
+import Pagination from '../../components/Pagination';
 import { toast } from 'react-toastify';
 
 const PAGE_SIZE = 10;
@@ -224,7 +224,10 @@ export default function Fines() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       User
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Due Date (Late Days)
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -233,7 +236,7 @@ export default function Fines() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Paid Date
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -261,7 +264,19 @@ export default function Fines() {
                           {fine.bookIssue?.user?.email ?? '—'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-wrap text-center text-sm text-gray-600">
+                        {fine.bookIssue?.dueDate
+                          ? new Date(fine.bookIssue.dueDate).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : '—'}
+                        <span className="ml-2 text-xs text-gray-400">
+                          ({Math.max(0, Math.floor((new Date() - new Date(fine.bookIssue?.dueDate)) / (1000 * 60 * 60 * 24)))})
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
                         ${fine.amount?.toFixed(2) ?? '0.00'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -278,7 +293,7 @@ export default function Fines() {
                             })
                           : '—'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                         {fine.status === 'Unpaid' ? (
                           <button
                             className="text-gray-400 hover:text-green-600 transition-colors"
