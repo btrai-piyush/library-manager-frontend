@@ -1,28 +1,31 @@
-import { useEffect, useState, useCallback } from 'react';
-import { bookIssueApi } from '../../api/Api';
-import { Loader2, Search, Filter, RotateCcw } from 'lucide-react';
-import Pagination from '../../components/Pagination';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { fineApi } from '../../../api/Api';
+import { Loader2, Search, Filter, CheckCircle } from 'lucide-react';
+import Pagination from '../../../components/Pagination';
 import { toast } from 'react-toastify';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
-export default function Borrowings() {
-  const [borrowings, setBorrowings] = useState([]);
-  const [loading, setLoading] = useState(true);       // initial load
-  const [isFetching, setIsFetching] = useState(false); // page / search changes
+export default function UnpaidFines() {
+  const [fines, setFines] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
 
-  // Search & pagination (server-side)
+  // Search & pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [pageNumber, setPageNumber] = useState(0); // 0‑based
+  const [pageNumber, setPageNumber] = useState(0); // 0‑based for internal, will send 1‑based
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Return modal
-  const [returnTarget, setReturnTarget] = useState(null);
+  // Mark as paid modal
+  const [payTarget, setPayTarget] = useState(null);
 
-  // Debounce search term (300ms)
+  // Request cancellation
+  const abortControllerRef = useRef(null);
+
+  // Debounce search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -30,97 +33,105 @@ export default function Borrowings() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch borrowings from server
-  const fetchBorrowings = useCallback(async () => {
+  // Fetch fines from server
+  const fetchFines = useCallback(async () => {
+    // Cancel any in‑flight request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsFetching(true);
     setError(null);
     try {
       const body = {
         searchTerm: debouncedSearchTerm,
-        sortBy: 'issuedDate',
+        sortBy: '',                // or a default like 'amount'
         isDescending: false,
-        pageNumber: pageNumber + 1,
+        pageNumber: pageNumber + 1, // backend expects 1‑based
         pageSize: PAGE_SIZE,
       };
-      const response = await bookIssueApi.getAllIssuedBooks(body);
+      const response = await fineApi.getAllFines(body, {
+        signal: controller.signal,
+      });
+
+      if (controller.signal.aborted) return;
 
       const items = Array.isArray(response) ? response : [];
-      // Extract totalCount from first item (if present), otherwise fallback to array length
-      const total = items.length > 0 ? (items[0].totalCount ?? items.length) : 0;
+      const total = items.length > 0 ? (items[0].totalCount ?? 0) : 0;
 
-      setBorrowings(items);
+      setFines(items);
       setTotalCount(total);
-      setTotalPages(Math.ceil(total / PAGE_SIZE) || 1); // at least 1 page for UX
+      setTotalPages(Math.ceil(total / PAGE_SIZE) || 1);
     } catch (err) {
-      console.error('Error fetching borrowings:', err);
-      setError('Failed to load borrowings. Please try again later.');
-      // Keep previous data on error, but reset counts to avoid infinite spinner
+      if (err.name === 'AbortError') return;
+      console.error('Error fetching fines:', err);
+      setError('Failed to load fines. Please try again later.');
       setTotalCount(0);
       setTotalPages(1);
     } finally {
-      setLoading(false);
       setIsFetching(false);
+      setLoading(false);
     }
   }, [debouncedSearchTerm, pageNumber]);
 
-  // Fetch when dependencies change
+  // Trigger fetch
   useEffect(() => {
-    fetchBorrowings();
-  }, [fetchBorrowings]);
+    fetchFines();
+  }, [fetchFines]);
 
-  // Reset page when debounced search changes
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Reset page when search changes
   useEffect(() => {
     setPageNumber(0);
   }, [debouncedSearchTerm]);
 
-  // Handler: page change
   const handlePageChange = (newPage) => {
-    setPageNumber(newPage - 1); // convert 1‑based to 0‑based
+    setPageNumber(newPage - 1);
   };
 
-  // Handler: return book
-  const handleReturn = async (bookIssueId) => {
+  // Mark fine as paid
+  const handlePayFine = async (fineId) => {
     try {
-      await bookIssueApi.returnBook(bookIssueId);
-      // Optimistic update
-      setBorrowings((prev) =>
-        prev.map((b) =>
-          b.bookIssueId === bookIssueId ? { ...b, status: 'Returned' } : b
+      await fineApi.payFine(fineId);
+      setFines((prev) =>
+        prev.map((f) =>
+          f.id === fineId ? { ...f, status: 'Paid', paidDate: new Date().toISOString() } : f
         )
       );
-      toast.success('Book marked as returned.');
+      toast.success('Fine marked as paid.');
     } catch (err) {
-      console.error('Error returning book:', err);
-      toast.error(err?.message || 'Failed to return book. Please try again.');
+      console.error('Error paying fine:', err);
+      toast.error(err?.message || 'Failed to mark fine as paid.');
     }
   };
 
-  // Status badge helpers
-  const getStatusBadgeClass = (item) => {
-    const dueDate = item.dueDate ? new Date(item.dueDate) : null;
-    const today = new Date();
-    if (item.status === 'Returned') return 'bg-gray-100 text-gray-600';
-    if (dueDate && dueDate < today) return 'bg-red-100 text-red-800'; // overdue
-    return 'bg-green-100 text-green-800'; // active
+  // Status badge helper
+  const getStatusBadgeClass = (status) => {
+    return status === 'Paid'
+      ? 'bg-green-100 text-green-800'
+      : 'bg-red-100 text-red-800';
   };
 
-  const getStatusLabel = (item) => {
-    if (item.status === 'Returned') return 'Returned';
-    const dueDate = item.dueDate ? new Date(item.dueDate) : null;
-    if (dueDate && dueDate < new Date()) return 'Overdue';
-    return 'Active';
-  };
-
-  // Helper for the "Showing X–Y of Z" text
+  // Row helpers
   const startItem = totalCount === 0 ? 0 : pageNumber * PAGE_SIZE + 1;
   const endItem = Math.min((pageNumber + 1) * PAGE_SIZE, totalCount);
 
-  // ----- RENDER -----
+  // ---- RENDER ----
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-        <span className="ml-3 text-gray-600 text-lg">Loading borrowings...</span>
+        <span className="ml-3 text-gray-600 text-lg">Loading fines...</span>
       </div>
     );
   }
@@ -141,10 +152,10 @@ export default function Borrowings() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-            Borrowings
+            Fines
           </h1>
           <p className="mt-2 text-gray-600 max-w-4xl">
-            Track all active and past borrowings. See who has which book and when it’s due.
+            View and manage unpaid/paid fines. Mark fines as paid once settled.
           </p>
         </div>
 
@@ -154,7 +165,7 @@ export default function Borrowings() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by book, author, user, email, or status..."
+              placeholder="Search by book title, user name, or status..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
@@ -169,9 +180,8 @@ export default function Borrowings() {
           </button>
         </div>
 
-        {/* Borrowings Table */}
+        {/* Fines Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative">
-          {/* Loading overlay for page changes */}
           {isFetching && (
             <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10">
               <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
@@ -180,11 +190,11 @@ export default function Borrowings() {
 
           <div className="px-6 py-4 border-b bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Issued Books</h2>
+              <h2 className="text-lg font-semibold text-gray-800">All Fines</h2>
               <p className="text-sm text-gray-500">
                 {totalCount > 0
-                  ? `Showing ${startItem}–${endItem} of ${totalCount} borrowings`
-                  : 'No borrowings found'}
+                  ? `Showing ${startItem}–${endItem} of ${totalCount} fines`
+                  : 'No fines found'}
               </p>
             </div>
             <div className="hidden sm:block">
@@ -196,9 +206,9 @@ export default function Borrowings() {
             </div>
           </div>
 
-          {borrowings.length === 0 ? (
+          {fines.length === 0 ? (
             <div className="px-6 py-12 text-center text-gray-500">
-              {searchTerm ? 'No borrowings match your search.' : 'No borrowings yet.'}
+              {searchTerm ? 'No fines match your search.' : 'No fines yet.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -208,87 +218,92 @@ export default function Borrowings() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Book
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                       Author(s)
-                    </th>
+                    </th> */}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Borrowed By
+                      User
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                      Issue Date
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Due Date (Late Days)
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                      Due Date
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                      Paid Date
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {borrowings.map((item) => (
-                    <tr key={item.bookIssueId} className="hover:bg-blue-50/30 transition-colors">
+                  {fines.map((fine) => (
+                    <tr key={fine.id} className="hover:bg-blue-50/30 transition-colors">
                       <td className="px-6 py-4 whitespace-wrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {item.book?.title ?? 'Unknown Book'}
+                          {fine.bookIssue?.book?.title ?? 'Unknown Book'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-wrap hidden md:table-cell">
+                      {/* <td className="px-6 py-4 whitespace-wrap hidden md:table-cell">
                         <div className="text-sm text-gray-600">
-                          {item.book?.authors
+                          {fine.bookIssue?.book?.authors
                             ?.map((a) => `${a.firstName} ${a.lastName}`)
                             .join(', ') || '—'}
                         </div>
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {item.user?.fullName ?? 'Unknown User'}
+                          {fine.bookIssue?.user?.fullName ?? 'Unknown User'}
                         </div>
                         <div className="text-xs text-gray-500">
-                          {item.user?.email ?? '—'}
+                          {fine.bookIssue?.user?.email ?? '—'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                        <div className="text-sm text-gray-600">
-                          {item.issuedDate
-                            ? new Date(item.issuedDate).toLocaleDateString('en-US', {
+                      <td className="px-6 py-4 whitespace-wrap text-center text-sm text-gray-600">
+                        {fine.bookIssue?.dueDate
+                          ? new Date(fine.bookIssue.dueDate).toLocaleDateString('en-US', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric',
                             })
-                            : '—'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                        <div className="text-sm text-gray-600">
-                          {item.dueDate
-                            ? new Date(item.dueDate).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })
-                            : '—'}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(item)}`}>
-                          {getStatusLabel(item)}
+                          : '—'}
+                        <span className="ml-2 text-xs text-gray-400">
+                          ({Math.max(0, Math.floor((new Date() - new Date(fine.bookIssue?.dueDate)) / (1000 * 60 * 60 * 24)))})
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {item.status !== 'Returned' ? (
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
+                        ${fine.amount?.toFixed(2) ?? '0.00'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(fine.status)}`}>
+                          {fine.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap justify-center hidden lg:table-cell text-sm text-gray-600">
+                        {fine.paidDate
+                          ? new Date(fine.paidDate).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                        {fine.status === 'Unpaid' ? (
                           <button
-                            className="text-gray-400 hover:text-blue-600 transition-colors"
-                            title="Return book"
-                            onClick={() => setReturnTarget(item.bookIssueId)}
+                            className="text-gray-400 hover:text-green-600 transition-colors"
+                            title="Mark as paid"
+                            onClick={() => setPayTarget(fine.id)}
                           >
-                            <RotateCcw className="w-5 h-5" />
+                            <CheckCircle className="w-5 h-5" />
                           </button>
                         ) : (
-                          <span className="text-gray-400 text-xs">Returned</span>
+                          <span className="text-gray-400 text-xs">Paid</span>
                         )}
                       </td>
                     </tr>
@@ -312,28 +327,28 @@ export default function Borrowings() {
           )}
         </div>
 
-        {/* Return Confirmation Modal */}
-        {returnTarget && (
+        {/* Pay Fine Confirmation Modal */}
+        {payTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="bg-white rounded-xl p-6 shadow-lg max-w-sm w-full">
               <p className="text-gray-800 mb-4">
-                Mark this book as <span className="font-semibold text-blue-700">returned</span>?
+                Mark this fine as <span className="font-semibold text-green-700">paid</span>?
               </p>
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => setReturnTarget(null)}
+                  onClick={() => setPayTarget(null)}
                   className="px-4 py-2 text-sm rounded-md border hover:bg-gray-100"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={async () => {
-                    await handleReturn(returnTarget);
-                    setReturnTarget(null);
+                    await handlePayFine(payTarget);
+                    setPayTarget(null);
                   }}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
                 >
-                  Confirm Return
+                  Confirm Payment
                 </button>
               </div>
             </div>
