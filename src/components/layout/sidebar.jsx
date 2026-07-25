@@ -45,9 +45,9 @@ export default function Sidebar({ navlinks }) {
 
   return (
     <aside
-      className={`hidden md:block fixed left-0 top-[64px] z-40 h-[calc(100vh-64px)] w-[250px] overflow-y-auto overflow-x-hidden border-r border-[#25385c] bg-[#1c2d4c] text-white transition-transform duration-200 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+      className={`hidden md:block fixed left-0 top-16 z-40 h-[calc(100vh-64px)] w-62.5 overflow-y-auto overflow-x-hidden border-r border-[#25385c] bg-[#1c2d4c] text-white transition-transform duration-200 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      } md:top-[70px] md:h-[calc(100vh-70px)]`}
+      } md:top-17.5 md:h-[calc(100vh-70px)]`}
     >
       <nav className="py-1">
         {navlinks.map((link) => {

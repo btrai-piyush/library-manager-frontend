@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { bookRequestApi, bookIssueApi } from '../../api/Api';
+import { bookRequestApi, bookIssueApi } from '../../../api/Api';
 import {
   Loader2,
   CheckCircle,
@@ -9,12 +9,12 @@ import {
   Filter,
   Calendar,
 } from 'lucide-react';
-import Pagination from '../../components/Pagination';
+import Pagination from '../../../components/Pagination';
 import { toast } from 'react-toastify';
 
 const PAGE_SIZE = 20;
 
-export default function BorrowRequests() {
+export default function PendingRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

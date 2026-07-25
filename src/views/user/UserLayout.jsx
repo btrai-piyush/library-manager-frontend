@@ -33,23 +33,12 @@ const sidebarNavlinks = [
 //   { title: "Profile", path: "/user/profile" },
 ];
 
-// If the navbar also needs a flat list (e.g., for mobile or breadcrumbs),
-// you can keep a separate array or flatten the above.
-const navbarLinks = [
-  { title: "Dashboard", path: "/user/dashboard" },
-  { title: "My Borrowings", path: "/user/borrowings" },  // overview page if needed
-  { title: "My Fines", path: "/user/fines" },
-  { title: "My Books", path: "/user/books" },
-  { title: "Browse Books", path: "/user/browse-books" },
-  { title: "Profile", path: "/user/profile" },
-];
-
 export default function UserLayout() {
   const sidebarOpen = useSelector((state) => state.sidebar.sidebarOpen);
 
   return (
     <div className="flex h-screen flex-col">
-      <Navbar navlinks={navbarLinks} />
+      <Navbar navlinks={sidebarNavlinks} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar navlinks={sidebarNavlinks} />
         <main

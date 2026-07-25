@@ -1,12 +1,18 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { PublicRoute, UserRoute, AdminRoute } from '../components/ProtectedRoutes';
 import Login from '../views/Login';
+
 import AdminDashboard from '../views/admin/Dashboard';
-import Books from '../views/admin/Books';
-import Borrowings from '../views/admin/Borrowings';
 import Users from '../views/admin/Users';
-import BorrowRequests from '../views/admin/BorrowRequests';
-import Fines from '../views/admin/Fines';
+import AdminActiveBorrowings from '../views/admin/borrowings/ActiveBorrowings';
+import AdminBorrowingHistory from '../views/admin/borrowings/BorrowingHistory';
+import PendingRequests from '../views/admin/borrow-requests/PendingRequests';
+import RequestsHistory from '../views/admin/borrow-requests/RequestsHistory';
+import UnpaidFines from '../views/admin/fines/UnpaidFines';
+import AdminFinesHistory from '../views/admin/fines/finesHistory';
+import AddBooks from '../views/admin/books/AddBooks';
+import AdminBrowseBooks from '../views/admin/books/BrowseBooks';
+
 import UserDashboard from '../views/user/Dashboard';
 import BrowseBooks from '../views/user/BrowseBooks';
 import ActiveBorrowings from '../views/user/borrowings/ActiveBorrowings';
@@ -43,12 +49,48 @@ const router = createBrowserRouter(
             ),
             children: [
                 { index: true, element: <Navigate to="dashboard" replace /> },
-                { path: "dashboard", element: <AdminDashboard /> },
-                { path: "books", element: <Books /> },
-                { path: "users", element: <Users /> },
-                { path: "borrow-requests", element: <BorrowRequests /> },
-                { path: "borrowings", element: <Borrowings /> },
-                { path: "fines", element: <Fines /> }
+                { path: "dashboard", element: <UserDashboard /> },
+
+                // Borrowings – nested
+                {
+                    path: "borrowings",
+                    children: [
+                        { index: true, element: <Navigate to="active" replace /> },
+                        { path: "active", element: <ActiveBorrowings /> },
+                        { path: "history", element: <BorrowingHistory /> }
+                    ]
+                },
+
+                {
+                    path:"borrow-requests",
+                    children: [
+                        { index: true, element: <Navigate to="pending" replace /> },
+                        { path: "pending", element: <PendingRequests /> },
+                        { path: "history", element: <RequestsHistory /> }
+                    ]
+                },
+
+                // Fines – nested
+                {
+                    path: "fines",
+                    children: [
+                        { index: true, element: <Navigate to="unpaid" replace /> },
+                        { path: "unpaid", element: <UnpaidFines /> },
+                        { path: "history", element: <FinesHistory /> }
+                    ]
+                },
+
+                // My Books – nested (wishlist + requested)
+                {
+                    path: "books",
+                    children: [
+                        { index: true, element: <Navigate to="browse" replace /> },
+                        { path: "browse", element: <BrowseBooks /> },
+                        { path: "add", element: <AddBooks /> }
+                    ]
+                },
+
+                {path: "users", element: <Users />}
             ]
         },
         {
