@@ -182,7 +182,9 @@ export const bookRequestApi = {
 
     undoBookRequest: (book) => request(`/v1/BookRequest/undo`, { method: 'POST', body: JSON.stringify(book) }),
 
-    getAll: (body) => request(`/v1/BookRequest/get-all`, { method: 'POST', body: JSON.stringify(body) }),
+    adminPendingRequests: (body) => request(`/v1/BookRequest/admin/pending-requests`, { method: 'POST', body: JSON.stringify(body) }),
+
+    adminRequestHistory: (body) => request(`/v1/BookRequest/admin/request-history`, { method: 'POST', body: JSON.stringify(body) }),
 
     approveRequest: (requestId) =>
         request(`/v1/BookRequest/approve?requestId=${requestId}`, {
@@ -198,13 +200,19 @@ export const bookRequestApi = {
 }
 
 export const bookIssueApi = {
+    adminGetActiveBorrowings: (body) => request(`/v1/BookIssue/admin/active`, { method: 'POST', body: JSON.stringify(body) }),
+
+    adminGetBorrowingHistory: (body) => request(`/v1/BookIssue/admin/history`, { method: 'POST', body: JSON.stringify(body) }),
+
     getBorrowedBooks: (userId) => request(`/v1/Borrow?userId=${userId}`, { method: 'GET' }),
 
     returnBook: (body) => request(`/v1/Borrow/return`, { method: 'POST', body: JSON.stringify(body) }),
 
     getAllIssuedBooks: (body) => request(`/v1/BookIssue/get-all`, { method: 'POST', body: JSON.stringify(body) }),
 
-    getBorrowedBooksByUser: (body) => request(`/v1/BookIssue/user`, { method: 'POST', body: JSON.stringify(body) }),
+    getActiveIssuesByUser: (body) => request(`/v1/BookIssue/user/active`, { method: 'POST', body: JSON.stringify(body) }),
+
+    getBorrowingHistoryByUser: (body) => request(`/v1/BookIssue/user/history`, { method: 'POST', body: JSON.stringify(body) }),
 
     issueBook: ({ requestId, dueDate }) =>
         request(`/v1/BookIssue/issue`, {
@@ -223,9 +231,11 @@ export const fineApi = {
 
     payFine: (fineId) => request(`/v1/Fine/pay-fine?fineId=${fineId}`, { method: 'PATCH' }),
 
-    getAllFines: (body) => request(`/v1/Fine/get-all`, { method: 'POST', body: JSON.stringify(body) }),
+    adminGetAllFines: (body) => request(`/v1/Fine/admin-fines`, { method: 'POST', body: JSON.stringify(body) }),
 };
 
 export const commonApi = {
     userDashboardStats: (userId) => request(`/v1/common/user-dashboard/${userId}`, { method: 'GET' }),
+
+    adminDashboardStats: () => request(`/v1/common/admin-dashboard`, { method: 'GET' }),
 }

@@ -50,7 +50,7 @@ export default function PendingRequests() {
         pageNumber: pageNumber + 1,
         pageSize: PAGE_SIZE,
       };
-      const response = await bookRequestApi.getAll(body);
+      const response = await bookRequestApi.adminPendingRequests(body);
 
       const items = Array.isArray(response) ? response : [];
       const total = items.length > 0 ? (items[0].totalCount ?? 0) : 0;

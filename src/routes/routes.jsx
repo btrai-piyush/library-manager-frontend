@@ -49,15 +49,15 @@ const router = createBrowserRouter(
             ),
             children: [
                 { index: true, element: <Navigate to="dashboard" replace /> },
-                { path: "dashboard", element: <UserDashboard /> },
+                { path: "dashboard", element: <AdminDashboard /> },
 
                 // Borrowings – nested
                 {
                     path: "borrowings",
                     children: [
                         { index: true, element: <Navigate to="active" replace /> },
-                        { path: "active", element: <ActiveBorrowings /> },
-                        { path: "history", element: <BorrowingHistory /> }
+                        { path: "active", element: <AdminActiveBorrowings /> },
+                        { path: "history", element: <AdminBorrowingHistory /> }
                     ]
                 },
 
@@ -76,7 +76,7 @@ const router = createBrowserRouter(
                     children: [
                         { index: true, element: <Navigate to="unpaid" replace /> },
                         { path: "unpaid", element: <UnpaidFines /> },
-                        { path: "history", element: <FinesHistory /> }
+                        { path: "history", element: <AdminFinesHistory /> }
                     ]
                 },
 
@@ -85,7 +85,7 @@ const router = createBrowserRouter(
                     path: "books",
                     children: [
                         { index: true, element: <Navigate to="browse" replace /> },
-                        { path: "browse", element: <BrowseBooks /> },
+                        { path: "browse", element: <AdminBrowseBooks /> },
                         { path: "add", element: <AddBooks /> }
                     ]
                 },
