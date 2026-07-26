@@ -46,13 +46,13 @@ export default function UnpaidFines() {
     setError(null);
     try {
       const body = {
+        userId: 0, 
+        status: 'unpaid',             
         searchTerm: debouncedSearchTerm,
-        sortBy: '',                // or a default like 'amount'
-        isDescending: false,
-        pageNumber: pageNumber + 1, // backend expects 1‑based
+        pageNumber: pageNumber + 1, 
         pageSize: PAGE_SIZE,
       };
-      const response = await fineApi.getAllFines(body, {
+      const response = await fineApi.adminGetAllFines(body, {
         signal: controller.signal,
       });
 

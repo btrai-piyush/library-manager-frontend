@@ -1,8 +1,23 @@
-export default function AdminBorrowingHistory() {
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <h1 className="text-2xl font-semibold text-gray-800 mb-4">Borrowing History</h1>
-            <p className="text-gray-600 text-lg">This is where the borrowing history will be displayed.</p>
-        </div>
-    );
-}
+import React from 'react';
+import AdminBorrowingsList from '../../../components/borrowings/AdminBorrowingsList';
+import { bookIssueApi } from '../../../api/api';
+
+const fetchHistoryBorrowings = async (params) => {
+  return await bookIssueApi.adminGetBorrowingHistory(params);
+};
+
+const AdminBorrowingHistory = () => {
+  return (
+    <div className="p-4">
+      <AdminBorrowingsList
+        fetchBorrowings={fetchHistoryBorrowings}
+        title="Borrowing History"
+        defaultSortBy="issuedDate"
+        defaultIsDescending={true}
+        defaultPageSize={10}
+      />
+    </div>
+  );
+};
+
+export default AdminBorrowingHistory;

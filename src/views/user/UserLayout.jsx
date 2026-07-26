@@ -9,6 +9,14 @@ const sidebarNavlinks = [
     { title: "Dashboard", path: "/user/dashboard" },
     { title: "Browse Books", path: "/user/browse-books" },
     {
+      title: "My Books",
+      children: [
+        { title: "Wishlist", path: "/user/books/wishlist" },
+        { title: "Requested Books", path: "/user/books/requested" },
+        { title: "Request History", path: "/user/books/request-history" },
+      ],
+    },
+    {
     title: "My Borrowings",
     children: [
       { title: "Active Borrowings", path: "/user/borrowings/active" },
@@ -20,14 +28,6 @@ const sidebarNavlinks = [
     children: [
       { title: "Active Fines", path: "/user/fines/active" },
       { title: "Fines History", path: "/user/fines/history" },
-    ],
-  },
-  {
-    title: "My Books",
-    children: [
-      { title: "Wishlist", path: "/user/books/wishlist" },
-      { title: "Requested Books", path: "/user/books/requested" },
-      { title: "Request History", path: "/user/books/request-history" },
     ],
   },
 //   { title: "Profile", path: "/user/profile" },

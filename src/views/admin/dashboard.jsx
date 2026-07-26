@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BookOpen,
@@ -13,52 +14,9 @@ import {
   UserPlus,
   FileText,
 } from 'lucide-react';
+import { commonApi } from '../../api/api'; // adjust import path as needed
 
-// ---------- MOCK DATA ----------
-const mockStats = {
-  totalBooks: 1250,
-  totalUsers: 348,
-  activeBorrowings: 86,
-  overdueBorrowings: 12,
-  pendingRequests: 7,
-  unpaidFines: 24,
-  totalFinesAmount: 430.75,
-  borrowRequestsToday: 3,
-};
-
-const mockRecentActivity = [
-  {
-    id: 1,
-    type: 'borrow_request',
-    detail: 'User John Doe requested "Clean Code"',
-    timestamp: '2026-07-24T14:30:00Z',
-  },
-  {
-    id: 2,
-    type: 'overdue',
-    detail: 'Book "Design Patterns" overdue by Jane Smith',
-    timestamp: '2026-07-24T09:15:00Z',
-  },
-  {
-    id: 3,
-    type: 'fine_paid',
-    detail: 'Mark Wilson paid $15.00 fine',
-    timestamp: '2026-07-23T16:45:00Z',
-  },
-  {
-    id: 4,
-    type: 'new_user',
-    detail: 'New user Sarah Connor registered',
-    timestamp: '2026-07-23T11:20:00Z',
-  },
-  {
-    id: 5,
-    type: 'book_returned',
-    detail: '"The Pragmatic Programmer" returned by Alice Brown',
-    timestamp: '2026-07-23T08:00:00Z',
-  },
-];
-
+// ---------- HELPER FUNCTIONS ----------
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleString('en-US', {
@@ -71,23 +29,75 @@ const formatDate = (dateStr) => {
 
 const getActivityIcon = (type) => {
   switch (type) {
-    case 'borrow_request':
+    case 'BookRequested':
       return <Clock className="w-4 h-4 text-blue-600" />;
-    case 'overdue':
-      return <AlertTriangle className="w-4 h-4 text-red-600" />;
-    case 'fine_paid':
+    case 'BookRequestCancelled':
+      return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+    case 'BookBorrowed':
+      return <BookMarked className="w-4 h-4 text-teal-600" />;
+    case 'BookReturned':
+      return <CheckCircle className="w-4 h-4 text-green-600" />;
+    case 'FinePaid':
       return <DollarSign className="w-4 h-4 text-green-600" />;
-    case 'new_user':
+    case 'NewUser':
       return <UserPlus className="w-4 h-4 text-purple-600" />;
-    case 'book_returned':
-      return <CheckCircle className="w-4 h-4 text-teal-600" />;
     default:
       return <Activity className="w-4 h-4 text-gray-600" />;
   }
 };
 
-// ---------- COMPONENT ----------
+// ---------- MAIN COMPONENT ----------
 export default function AdminDashboard() {
+  const [stats, setStats] = useState({
+    totalBooks: 0,
+    totalUsers: 0,
+    activeBorrowings: 0,
+    pendingRequests: 0,
+    unpaidFines: 0,
+    recentActivity: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const data = await commonApi.adminDashboardStats();
+        setStats({
+          totalBooks: data.totalBooks || 0,
+          totalUsers: data.totalUsers || 0,
+          activeBorrowings: data.activeBorrowings || 0,
+          pendingRequests: data.pendingRequests || 0,
+          unpaidFines: data.unpaidFines || 0,
+          recentActivity: data.recentActivity || [],
+        });
+      } catch (err) {
+        console.error('Failed to fetch dashboard stats:', err);
+        setError('Failed to load dashboard data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+        <p>{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -119,7 +129,7 @@ export default function AdminDashboard() {
         <StatCard
           icon={<BookOpen className="w-5 h-5" />}
           label="Total Books"
-          value={mockStats.totalBooks}
+          value={stats.totalBooks}
           link="/admin/books"
           iconColor="text-blue-600"
           bgColor="bg-blue-50"
@@ -127,7 +137,7 @@ export default function AdminDashboard() {
         <StatCard
           icon={<Users className="w-5 h-5" />}
           label="Total Users"
-          value={mockStats.totalUsers}
+          value={stats.totalUsers}
           link="/admin/users"
           iconColor="text-purple-600"
           bgColor="bg-purple-50"
@@ -135,31 +145,29 @@ export default function AdminDashboard() {
         <StatCard
           icon={<BookMarked className="w-5 h-5" />}
           label="Active Borrowings"
-          value={mockStats.activeBorrowings}
-          sub={`${mockStats.overdueBorrowings} overdue`}
+          value={stats.activeBorrowings}
+          // sub removed because API doesn't provide overdue count
           link="/admin/borrowings"
           iconColor="text-teal-600"
           bgColor="bg-teal-50"
-          alert={mockStats.overdueBorrowings > 0}
         />
         <StatCard
           icon={<Clock className="w-5 h-5" />}
           label="Pending Requests"
-          value={mockStats.pendingRequests}
+          value={stats.pendingRequests}
           link="/admin/borrow-requests"
           iconColor="text-orange-600"
           bgColor="bg-orange-50"
-          alert={mockStats.pendingRequests > 0}
+          alert={stats.pendingRequests > 0}
         />
         <StatCard
           icon={<DollarSign className="w-5 h-5" />}
           label="Unpaid Fines"
-          value={`$${mockStats.totalFinesAmount.toFixed(2)}`}
-          sub={`${mockStats.unpaidFines} fines`}
+          value={stats.unpaidFines}
           link="/admin/fines"
           iconColor="text-red-600"
           bgColor="bg-red-50"
-          alert={mockStats.unpaidFines > 0}
+          alert={stats.unpaidFines > 0}
         />
       </div>
 
@@ -181,17 +189,21 @@ export default function AdminDashboard() {
           </div>
 
           <ul className="space-y-4">
-            {mockRecentActivity.map((item) => (
-              <li key={item.id} className="flex items-start gap-3">
-                <div className="mt-0.5 p-1 rounded-full bg-gray-100">
-                  {getActivityIcon(item.type)}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-700">{item.detail}</p>
-                  <p className="text-xs text-gray-400">{formatDate(item.timestamp)}</p>
-                </div>
-              </li>
-            ))}
+            {stats.recentActivity.length === 0 ? (
+              <li className="text-gray-500 text-sm">No recent activity.</li>
+            ) : (
+              stats.recentActivity.map((item, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <div className="mt-0.5 p-1 rounded-full bg-gray-100">
+                    {getActivityIcon(item.activityType)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-700">{item.description}</p>
+                    <p className="text-xs text-gray-400">{formatDate(item.createdAt)}</p>
+                  </div>
+                </li>
+              ))
+            )}
           </ul>
         </div>
 
@@ -215,13 +227,13 @@ export default function AdminDashboard() {
               to="/admin/borrow-requests"
               icon={<Clock className="w-5 h-5" />}
               label="Borrow Requests"
-              description={`${mockStats.pendingRequests} pending`}
+              description={`${stats.pendingRequests} pending`}
             />
             <QuickAction
               to="/admin/fines"
               icon={<DollarSign className="w-5 h-5" />}
               label="Manage Fines"
-              description={`${mockStats.unpaidFines} unpaid`}
+              description={`${stats.unpaidFines} unpaid`}
             />
           </div>
         </div>
