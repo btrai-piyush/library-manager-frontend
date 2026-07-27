@@ -163,7 +163,7 @@ export default function AdminFinesHistory() {
 
         {/* Search Bar */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-grow">
+          <div className="relative grow">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
