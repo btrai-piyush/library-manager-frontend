@@ -151,12 +151,22 @@ export const authApi = {
 };
 
 export const userApi = {
+    adminStudentView: (studentId) => request(`/v1/User/admin-view?studentId=${studentId}`, { method: 'GET' }),
+
+    adminGetAllStudents: (body) => request(`/v1/User/get-all`, { method: 'POST', body: JSON.stringify(body) }),
+
     getByEmail: (email) => request(`/v1/User/${encodeURIComponent(email)}`, { method: 'GET' }),
 
     getStudentDetails: (studentId) => request(`/v1/User/student-details/${studentId}`, { method: 'GET' }),
 }
 
 export const bookApi = {
+    updateBook: (bookId, body) => request(`/v1/Book/update-book/${bookId}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+    getBookById: (bookId) => request(`/v1/Book/${bookId}`, { method: 'GET' }),
+
+    addBooks: (body) => request(`/v1/Book/add-books`, { method: 'POST', body: JSON.stringify(body) }),
+
     getFiltered: async (filters) => {
         try {
             return await request(`/v1/Book/get-all-user?${new URLSearchParams(filters).toString()}`, { method: 'GET' });
@@ -165,6 +175,14 @@ export const bookApi = {
             throw error;
         }
     }
+}
+
+export const subjectApi = {
+    getAllSubjects: () => request(`/v1/Subject`, { method: 'GET' }),
+}
+
+export const categoryApi = {
+    getAllCategories: () => request(`/v1/Category`, { method: 'GET' }),
 }
 
 export const wishlistApi = {
@@ -238,4 +256,10 @@ export const commonApi = {
     userDashboardStats: (userId) => request(`/v1/common/user-dashboard/${userId}`, { method: 'GET' }),
 
     adminDashboardStats: () => request(`/v1/common/admin-dashboard`, { method: 'GET' }),
+}
+
+export const addBookByBarcodeApi = {
+    getByISBN: (isbn) => request(`/v1/GoogleBooks/lookup/${isbn}`, { method: 'GET' }), // barcode scan reads the isbn
+
+
 }

@@ -2,8 +2,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import { PublicRoute, UserRoute, AdminRoute } from '../components/ProtectedRoutes';
 import Login from '../views/Login';
 
-import AdminDashboard from '../views/admin/Dashboard';
-import Users from '../views/admin/Users';
+import AdminDashboard from '../views/admin/dashboard';
 import AdminActiveBorrowings from '../views/admin/borrowings/ActiveBorrowings';
 import AdminBorrowingHistory from '../views/admin/borrowings/BorrowingHistory';
 import PendingRequests from '../views/admin/borrow-requests/PendingRequests';
@@ -12,6 +11,9 @@ import UnpaidFines from '../views/admin/fines/UnpaidFines';
 import AdminFinesHistory from '../views/admin/fines/finesHistory';
 import AddBooks from '../views/admin/books/AddBooks';
 import AdminBrowseBooks from '../views/admin/books/BrowseBooks';
+import Students from '../views/admin/Students';
+import StudentView from '../views/admin/users/StudentView';
+import BookView from '../views/admin/books/BookView';
 
 import UserDashboard from '../views/user/Dashboard';
 import BrowseBooks from '../views/user/BrowseBooks';
@@ -90,7 +92,9 @@ const router = createBrowserRouter(
                     ]
                 },
 
-                {path: "users", element: <Users />}
+                {path: "students", element: <Students />},
+                {path: "students/:userId", element: <StudentView /> },
+                {path: "books/:bookId", element: <BookView /> }
             ]
         },
         {

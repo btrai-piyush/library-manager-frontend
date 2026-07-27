@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   fetchFilteredBooks,
   setAppliedFilters,
@@ -15,6 +16,7 @@ import { toast } from 'react-toastify';
 
 const BookSearch = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const appliedFilters = useSelector(selectAppliedFilters);
   const books = useSelector(selectBooks);
   const loading = useSelector(selectLoading);
@@ -36,7 +38,7 @@ const BookSearch = () => {
     const body = { userId, bookId };
     try {
       var response = await wishlistApi.addToWishlist(body);
-        toast.success('Book added to wishlist!');
+      toast.success('Book added to wishlist!');
     } catch (error) {
       console.error('Error adding book to wishlist:', error);
       toast.error(error.message);
@@ -272,12 +274,20 @@ const BookSearch = () => {
                         </td>
                         <td className="px-6 py-4 text-sm font-medium">
                           <div className="flex items-center">
-                            <button className="text-blue-600 hover:text-blue-900 hover:cursor-pointer" title="View Details">
-                              <Eye className="w-5 h-5" />
-                            </button>
-                            <button className="ml-4 text-green-600 hover:text-green-900 hover:cursor-pointer" onClick={() => handleWishlistAdd(book.id)} title="Add to Wishlist">
-                              <HeartPlus className="w-5 h-5" />
-                            </button>
+                            {userRole === 'admin' && (
+                              <button
+                                className="text-blue-600 hover:text-blue-900 hover:cursor-pointer"
+                                title="View Details"
+                                onClick={() => navigate(`/admin/books/${book.id}`)}
+                              >
+                                <Eye className="w-5 h-5" />
+                              </button>
+                            )}
+                            {userRole === 'user' && (
+                              <button className="ml-4 text-green-600 hover:text-green-900 hover:cursor-pointer" onClick={() => handleWishlistAdd(book.id)} title="Add to Wishlist">
+                                <HeartPlus className="w-5 h-5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

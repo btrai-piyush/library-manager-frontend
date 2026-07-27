@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 // Hierarchical structure for the sidebar
 const sidebarNavlinks = [
     { title: "Dashboard", path: "/admin/dashboard" },
-    { title: "Users", path: "/admin/users" },
+    { title: "Students", path: "/admin/students" },
     {
     title: "Manage Borrowings",
     children: [

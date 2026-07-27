@@ -13,12 +13,12 @@ import {
   Calendar,
   ArrowRight,
   Loader2,
-  BookCheck,       // new
-  HeartOff,        // new
-  Ban,             // new
-  XCircle,         // new
+  BookCheck,
+  HeartOff,
+  Ban,
+  XCircle,
 } from 'lucide-react';
-import { commonApi } from '../../api/Api'; // adjust path
+import { commonApi } from '../../api/Api';
 
 export default function UserDashboard() {
   const { user } = useSelector((state) => state.auth);
@@ -36,6 +36,7 @@ export default function UserDashboard() {
       setError(null);
       try {
         const data = await commonApi.userDashboardStats(userId);
+        console.log('recommendedBooks:', data.recommendedBooks);
         setStats(data);
       } catch (err) {
         console.error('Dashboard fetch error:', err);
@@ -76,6 +77,7 @@ export default function UserDashboard() {
     requestedBooks = 0,
     upcomingDueDates = [],
     recentActivity = [],
+    recommendedBooks = [],
   } = stats || {};
 
   // Helper to format date
@@ -262,7 +264,6 @@ export default function UserDashboard() {
             <ul className="space-y-3">
               {recentActivity.map((item, idx) => (
                 <li key={idx} className="flex items-start gap-3">
-                  {/* Dynamic icon based on activity type */}
                   <div className="mt-0.5 p-1 rounded-full bg-gray-100">
                     {getActivityIcon(item.activityType)}
                   </div>
@@ -276,6 +277,58 @@ export default function UserDashboard() {
           )}
         </div>
       </div>
+
+      {/* Recommended Books Section */}
+      {recommendedBooks.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-indigo-600" />
+              Recommended for You
+            </h3>
+            <Link
+              to="/user/browse-books"
+              className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+            >
+              Browse All <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {recommendedBooks.map((book) => (
+              <div
+                key={book.id}
+                className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow flex flex-col"
+              >
+                <h4 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1">
+                  {book.title}
+                </h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  {book.authors?.map(a => `${a.firstName} ${a.lastName}`).join(', ') || 'Unknown Author'}
+                </p>
+                <div className="mt-3 flex items-center justify-between">
+                  <Link
+                    to={`/user/books/${book.id}`}
+                    className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                  >
+                    View Details
+                  </Link>
+                  <button
+                    className="p-1.5 rounded-full hover:bg-pink-50 text-gray-400 hover:text-pink-600 transition-colors"
+                    title="Add to Wishlist"
+                    onClick={() => {
+                      // Implement wishlist add logic if needed
+                      console.log('Add to wishlist:', book.id);
+                    }}
+                  >
+                    <Heart className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Links */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">

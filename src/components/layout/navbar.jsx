@@ -291,13 +291,11 @@ const Navbar = ({ navlinks = [] }) => {
                         <a href="/dashboard" className="flex items-center gap-2 shrink-0">
                             <div className="relative">
                                 <div className="absolute inset-0 rounded-full bg-indigo-100/50 blur-sm" />
-                                <div className="relative flex h-15 w-15 items-center justify-center rounded-full sm:h-15 sm:w-20 md:h-15 md:w-20">
+                                <div className="relative flex h-15 w-15 items-center justify-center rounded-full sm:h-15 sm:w-15 md:h-15 md:w-15">
                                     <img
                                         src="/tu-logo.png"
                                         alt="Logo"
-                                        width={40}
-                                        height={40}
-                                        className="h-13 w-13 sm:h-15 sm:w-15 md:h-15 md:w-15"
+                                        className="h-15 w-15 sm:h-15 sm:w-15 md:h-15 md:w-15"
                                     />
                                 </div>
                             </div>
