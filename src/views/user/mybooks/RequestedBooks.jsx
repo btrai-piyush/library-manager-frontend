@@ -135,9 +135,9 @@ export default function RequestedBooks() {
                     <td className="px-6 py-4 text-sm text-gray-600 hidden md:table-cell">{book.publisher}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-3">
-                        <button className="text-gray-400 hover:text-blue-600" title="View details">
+                        {/* <button className="text-gray-400 hover:text-blue-600" title="View details">
                           <Eye className="w-5 h-5" />
-                        </button>
+                        </button> */}
                         <button className="text-gray-400 hover:text-red-600" title="Undo & remove from wishlist"
                           onClick={() => setUndoTarget(book.id)}>
                           <Trash2 className="w-5 h-5" />

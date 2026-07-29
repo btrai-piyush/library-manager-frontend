@@ -225,7 +225,7 @@ const BookSearch = () => {
                       <th className="px-6 py-4 font-semibold text-gray-700">Title</th>
                       <th className="px-6 py-4 font-semibold text-gray-700">Author</th>
                       {/* <th className="px-6 py-4 font-semibold text-gray-700">Categories</th> */}
-                      {/* <th className="px-6 py-4 font-semibold text-gray-700">ISBN</th> */}
+                      <th className="px-6 py-4 font-semibold text-gray-700">ISBN</th>
                       <th className="px-6 py-4 font-semibold text-gray-700">Publisher</th>
                       <th className="px-6 py-4 font-semibold text-gray-700">Availability</th>
                       <th className="px-6 py-4 font-semibold text-gray-700">Actions</th>
@@ -250,7 +250,7 @@ const BookSearch = () => {
                             ))}
                           </div>
                         </td> */}
-                        {/* <td className="px-6 py-4 text-gray-600">{book.isbn}</td> */}
+                        <td className="px-6 py-4 text-gray-600 whitespace-nowrap">{book.isbn}</td>
                         <td className="px-6 py-4 text-gray-600">{book.publisher}</td>
                         <td className="px-6 py-4 items-center">
                           <div className="flex items-center justify-center">
@@ -279,6 +279,15 @@ const BookSearch = () => {
                                 className="text-blue-600 hover:text-blue-900 hover:cursor-pointer"
                                 title="View Details"
                                 onClick={() => navigate(`/admin/books/${book.id}`)}
+                              >
+                                <Eye className="w-5 h-5" />
+                              </button>
+                            )}
+                            {userRole === 'user' && (
+                              <button
+                                className="text-blue-600 hover:text-blue-900 hover:cursor-pointer"
+                                title="View Details"
+                                onClick={() => navigate(`/user/books/${book.id}`)}
                               >
                                 <Eye className="w-5 h-5" />
                               </button>

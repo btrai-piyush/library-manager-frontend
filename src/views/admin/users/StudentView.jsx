@@ -224,7 +224,8 @@ const UserView = () => {
                           {formatDate(issue.returnedDate)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadge(issue.status)}`}>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            ${(issue.status.toLowerCase() === 'returned' && new Date(issue.dueDate) < new Date(issue.returnedDate)) ? 'bg-red-100 text-red-800' : getStatusBadge(issue.status)}`}>
                             {issue.status}
                           </span>
                         </td>
@@ -275,7 +276,7 @@ const UserView = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
-                          ${fine.amount?.toFixed(2) ?? '0.00'}
+                          रु{fine.amount?.toFixed(2) ?? '0.00'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getFineStatusBadge(fine.status)}`}>

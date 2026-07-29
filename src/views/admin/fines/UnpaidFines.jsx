@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { fineApi } from '../../../api/Api';
-import { Loader2, Search, Filter, CheckCircle } from 'lucide-react';
+import { Loader2, Search, Filter, CheckCircle, ArrowUpDown } from 'lucide-react';
 import Pagination from '../../../components/Pagination';
 import { toast } from 'react-toastify';
 
@@ -12,10 +12,12 @@ export default function UnpaidFines() {
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
 
-  // Search & pagination
+  // Search, sorting & pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [pageNumber, setPageNumber] = useState(0); // 0‑based for internal, will send 1‑based
+  const [sortBy, setSortBy] = useState('dueDate');
+  const [isDescending, setIsDescending] = useState(true);
+  const [pageNumber, setPageNumber] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -33,9 +35,13 @@ export default function UnpaidFines() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
+  // Reset page when search, sort, or order changes
+  useEffect(() => {
+    setPageNumber(0);
+  }, [debouncedSearchTerm, sortBy, isDescending]);
+
   // Fetch fines from server
   const fetchFines = useCallback(async () => {
-    // Cancel any in‑flight request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -46,10 +52,12 @@ export default function UnpaidFines() {
     setError(null);
     try {
       const body = {
-        userId: 0, 
-        status: 'unpaid',             
+        userId: 0,
+        status: 'unpaid',
         searchTerm: debouncedSearchTerm,
-        pageNumber: pageNumber + 1, 
+        sortBy,
+        isDescending,
+        pageNumber: pageNumber + 1,
         pageSize: PAGE_SIZE,
       };
       const response = await fineApi.adminGetAllFines(body, {
@@ -74,7 +82,7 @@ export default function UnpaidFines() {
       setIsFetching(false);
       setLoading(false);
     }
-  }, [debouncedSearchTerm, pageNumber]);
+  }, [debouncedSearchTerm, sortBy, isDescending, pageNumber]);
 
   // Trigger fetch
   useEffect(() => {
@@ -90,13 +98,16 @@ export default function UnpaidFines() {
     };
   }, []);
 
-  // Reset page when search changes
-  useEffect(() => {
-    setPageNumber(0);
-  }, [debouncedSearchTerm]);
-
   const handlePageChange = (newPage) => {
     setPageNumber(newPage - 1);
+  };
+
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+  };
+
+  const toggleOrder = () => {
+    setIsDescending(!isDescending);
   };
 
   // Mark fine as paid
@@ -152,32 +163,60 @@ export default function UnpaidFines() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-            Fines
+            Unpaid Fines
           </h1>
           <p className="mt-2 text-gray-600 max-w-4xl">
-            View and manage unpaid/paid fines. Mark fines as paid once settled.
+            View and manage unpaid fines. Mark fines as paid once settled.
           </p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search & Sort Bar */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by book title, user name, or status..."
+              placeholder="Search by book title or user name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
-          <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            onClick={() => setSearchTerm('')}
-          >
-            <Filter className="w-5 h-5" />
-            Clear
-          </button>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={sortBy}
+              onChange={handleSortChange}
+              className="py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+            >
+              <option value="dueDate">Due Date</option>
+              <option value="amount">Amount</option>
+              <option value="user.fullName">User</option>
+            </select>
+
+            <button
+              onClick={toggleOrder}
+              className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              title={isDescending ? 'Descending' : 'Ascending'}
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              <span className="text-sm text-gray-700">
+                {isDescending ? 'Descending' : 'Ascending'}
+              </span>
+            </button>
+
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              onClick={() => {
+                setSearchTerm('');
+                setSortBy('dueDate');
+                setIsDescending(true);
+              }}
+            >
+              <Filter className="w-5 h-5" />
+              Clear
+            </button>
+          </div>
         </div>
 
         {/* Fines Table */}
@@ -190,7 +229,7 @@ export default function UnpaidFines() {
 
           <div className="px-6 py-4 border-b bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">All Fines</h2>
+              <h2 className="text-lg font-semibold text-gray-800">All Unpaid Fines</h2>
               <p className="text-sm text-gray-500">
                 {totalCount > 0
                   ? `Showing ${startItem}–${endItem} of ${totalCount} fines`
@@ -208,7 +247,7 @@ export default function UnpaidFines() {
 
           {fines.length === 0 ? (
             <div className="px-6 py-12 text-center text-gray-500">
-              {searchTerm ? 'No fines match your search.' : 'No fines yet.'}
+              {searchTerm ? 'No fines match your search.' : 'No unpaid fines yet.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -218,9 +257,6 @@ export default function UnpaidFines() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Book
                     </th>
-                    {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                      Author(s)
-                    </th> */}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       User
                     </th>
@@ -233,7 +269,7 @@ export default function UnpaidFines() {
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                       Paid Date
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -249,13 +285,6 @@ export default function UnpaidFines() {
                           {fine.bookIssue?.book?.title ?? 'Unknown Book'}
                         </div>
                       </td>
-                      {/* <td className="px-6 py-4 whitespace-wrap hidden md:table-cell">
-                        <div className="text-sm text-gray-600">
-                          {fine.bookIssue?.book?.authors
-                            ?.map((a) => `${a.firstName} ${a.lastName}`)
-                            .join(', ') || '—'}
-                        </div>
-                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {fine.bookIssue?.user?.fullName ?? 'Unknown User'}
@@ -273,11 +302,11 @@ export default function UnpaidFines() {
                             })
                           : '—'}
                         <span className="ml-2 text-xs text-gray-400">
-                          ({Math.max(0, Math.floor((new Date() - new Date(fine.bookIssue?.dueDate)) / (1000 * 60 * 60 * 24)))})
+                          ({Math.max(0, Math.floor((new Date() - new Date(fine.bookIssue?.dueDate)) / (1000 * 60 * 60 * 24)))-1})
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900">
-                        ${fine.amount?.toFixed(2) ?? '0.00'}
+                        रु{fine.amount?.toFixed(2) ?? '0.00'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(fine.status)}`}>

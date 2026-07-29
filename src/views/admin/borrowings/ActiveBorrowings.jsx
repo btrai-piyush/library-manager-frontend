@@ -15,7 +15,7 @@ const AdminActiveBorrowings = () => {
         defaultSortBy="dueDate"
         defaultIsDescending={false}
         defaultPageSize={10}
-        showActions
+        showActions={true} // Show the Return button
       />
     </div>
   );

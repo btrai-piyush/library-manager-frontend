@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { bookRequestApi } from '../../../api/Api';
-import { Search, Loader2, Clock, CheckCircle, XCircle, Ban } from 'lucide-react';
+import { Search, Loader2, Clock, CheckCircle, XCircle, Ban, ArrowUpDown, Filter } from 'lucide-react';
 import Pagination from '../../../components/Pagination';
 
 const PAGE_SIZE = 20;
@@ -18,16 +18,20 @@ export default function RequestHistory() {
     const [searchInput, setSearchInput] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
 
+    // Sort & order state
+    const [sortBy, setSortBy] = useState('requestDate');
+    const [isDescending, setIsDescending] = useState(true);
+
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => setDebouncedSearch(searchInput), 500);
         return () => clearTimeout(timer);
     }, [searchInput]);
 
-    // Reset page on new search
+    // Reset page when search, sort, or order changes
     useEffect(() => {
         setPage(1);
-    }, [debouncedSearch]);
+    }, [debouncedSearch, sortBy, isDescending]);
 
     const fetchRequests = useCallback(async () => {
         if (!userId) return;
@@ -37,10 +41,10 @@ export default function RequestHistory() {
 
         try {
             const body = {
-                searchId: userId,               // your API expects a 'searchId' likely userId
+                searchId: userId,
                 searchTerm: debouncedSearch.trim(),
-                sortBy: 'requestDate',           // default sort; adjust as needed
-                isDescending: true,
+                sortBy,
+                isDescending,
                 pageNumber: page,
                 pageSize: PAGE_SIZE,
             };
@@ -55,13 +59,27 @@ export default function RequestHistory() {
         } finally {
             setLoading(false);
         }
-    }, [userId, debouncedSearch, page]);
+    }, [userId, debouncedSearch, sortBy, isDescending, page]);
 
     useEffect(() => {
         fetchRequests();
     }, [fetchRequests]);
 
-    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+    const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+    const handleSortChange = (e) => {
+        setSortBy(e.target.value);
+    };
+
+    const toggleOrder = () => {
+        setIsDescending(!isDescending);
+    };
+
+    const handleClear = () => {
+        setSearchInput('');
+        setSortBy('requestDate');
+        setIsDescending(true);
+    };
 
     const formatDate = (dateStr) => {
         if (!dateStr || dateStr.startsWith('0001')) return '—';
@@ -126,20 +144,56 @@ export default function RequestHistory() {
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Request History</h1>
                     <p className="text-gray-600 text-sm mt-1">Track the status of your book requests.</p>
                 </div>
-                <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            </div>
+
+            {/* Search & Sort Bar */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input
                         type="text"
-                        placeholder="Search by book title..."
+                        placeholder="Search by book title or author..."
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     />
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                    <select
+                        value={sortBy}
+                        onChange={handleSortChange}
+                        className="py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+                    >
+                        <option value="requestDate">Request Date</option>
+                        <option value="status">Status</option>
+                        <option value="title">Book Title</option>
+                    </select>
+
+                    <button
+                        onClick={toggleOrder}
+                        className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        title={isDescending ? 'Descending' : 'Ascending'}
+                    >
+                        <ArrowUpDown className="w-4 h-4" />
+                        <span className="text-sm text-gray-700">
+                            {isDescending ? 'Descending' : 'Ascending'}
+                        </span>
+                    </button>
+
+                    <button
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        onClick={handleClear}
+                    >
+                        <Filter className="w-5 h-5" />
+                        Clear
+                    </button>
                 </div>
             </div>
 

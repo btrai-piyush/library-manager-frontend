@@ -2,15 +2,11 @@ import { useEffect, useState, useCallback } from 'react';
 import { bookRequestApi } from '../../../api/api';
 import {
   Loader2,
-  CheckCircle,
-  XCircle,
-  Eye,
   Search,
   Filter,
-  Calendar,
+  ArrowUpDown,
 } from 'lucide-react';
 import Pagination from '../../../components/Pagination';
-import { toast } from 'react-toastify';
 
 const PAGE_SIZE = 20;
 
@@ -19,16 +15,14 @@ export default function RequestsHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Search & pagination (server-side)
+  // Search, sorting & pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [pageNumber, setPageNumber] = useState(0);   // 0‑based
+  const [sortBy, setSortBy] = useState('requestDate');
+  const [isDescending, setIsDescending] = useState(true);
+  const [pageNumber, setPageNumber] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-
-  // Modals
-  const [approveModal, setApproveModal] = useState(null); // { requestId, dueDate }
-  const [rejectTarget, setRejectTarget] = useState(null);
 
   // Debounce search term
   useEffect(() => {
@@ -38,6 +32,11 @@ export default function RequestsHistory() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
+  // Reset page when search, sort, or order changes
+  useEffect(() => {
+    setPageNumber(0);
+  }, [debouncedSearchTerm, sortBy, isDescending]);
+
   // Fetch requests from server
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -45,8 +44,8 @@ export default function RequestsHistory() {
     try {
       const body = {
         searchTerm: debouncedSearchTerm,
-        sortBy: 'requestDate',    // adjust if needed
-        isDescending: true,       // newest first
+        sortBy,
+        isDescending,
         pageNumber: pageNumber + 1,
         pageSize: PAGE_SIZE,
       };
@@ -57,30 +56,30 @@ export default function RequestsHistory() {
 
       setRequests(items);
       setTotalCount(total);
-      setTotalPages(Math.ceil(total / PAGE_SIZE));
+      setTotalPages(Math.ceil(total / PAGE_SIZE) || 1);
     } catch (err) {
-      console.error('Error fetching borrow requests:', err);
+      console.error('Error fetching request history:', err);
       setError('Failed to load requests. Please try again later.');
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearchTerm, pageNumber]);
+  }, [debouncedSearchTerm, sortBy, isDescending, pageNumber]);
 
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
 
-  // Reset page when search changes
-  useEffect(() => {
-    setPageNumber(0);
-  }, [debouncedSearchTerm]);
-
-  // Page change handler (convert 1‑based -> 0‑based)
   const handlePageChange = (newPage) => {
     setPageNumber(newPage - 1);
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+  };
+
+  const toggleOrder = () => {
+    setIsDescending(!isDescending);
+  };
 
   // ----- RENDER -----
   if (loading && requests.length === 0) {
@@ -111,11 +110,11 @@ export default function RequestsHistory() {
             Request History
           </h1>
           <p className="mt-2 text-gray-600 max-w-4xl">
-            View the history of all book requests from users.
+            View the history of all book requests from users. Search, sort, and order by various fields.
           </p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search & Sort Bar */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -127,13 +126,41 @@ export default function RequestsHistory() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
-          <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            onClick={() => setSearchTerm('')}
-          >
-            <Filter className="w-5 h-5" />
-            Clear
-          </button>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={sortBy}
+              onChange={handleSortChange}
+              className="py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+            >
+              <option value="requestdate">Request Date</option>
+              <option value="status">Status</option>
+              <option value="title">Book Title</option>
+            </select>
+
+            <button
+              onClick={toggleOrder}
+              className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              title={isDescending ? 'Descending' : 'Ascending'}
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              <span className="text-sm text-gray-700">
+                {isDescending ? 'Newest' : 'Oldest'}
+              </span>
+            </button>
+
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              onClick={() => {
+                setSearchTerm('');
+                setSortBy('requestDate');
+                setIsDescending(true);
+              }}
+            >
+              <Filter className="w-5 h-5" />
+              Clear
+            </button>
+          </div>
         </div>
 
         {/* Requests Table */}
@@ -142,9 +169,9 @@ export default function RequestsHistory() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800">All Requests</h2>
               <p className="text-sm text-gray-500">
-                Showing {(pageNumber * PAGE_SIZE) + 1}–
-                {Math.min((pageNumber + 1) * PAGE_SIZE, totalCount)} of{' '}
-                {totalCount} requests
+                {totalCount > 0
+                  ? `Showing ${(pageNumber * PAGE_SIZE) + 1}–${Math.min((pageNumber + 1) * PAGE_SIZE, totalCount)} of ${totalCount} requests`
+                  : 'No requests found'}
               </p>
             </div>
             <div className="hidden sm:block">
@@ -158,7 +185,7 @@ export default function RequestsHistory() {
 
           {requests.length === 0 ? (
             <div className="px-6 py-12 text-center text-gray-500">
-              {searchTerm ? 'No requests match your search.' : 'No borrow requests yet.'}
+              {searchTerm ? 'No requests match your search.' : 'No requests yet.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -250,91 +277,6 @@ export default function RequestsHistory() {
             </div>
           )}
         </div>
-
-        {/* Approve Modal with Due Date (unchanged) */}
-        {approveModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-xl p-6 shadow-lg max-w-sm w-full">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Set Due Date
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Choose the date by which the book must be returned.
-              </p>
-              <div className="mb-4">
-                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Date
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    id="dueDate"
-                    type="date"
-                    min={today}
-                    value={approveModal.dueDate}
-                    onChange={(e) =>
-                      setApproveModal({ ...approveModal, dueDate: e.target.value })
-                    }
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                  />
-                </div>
-                {approveModal.dueDate && approveModal.dueDate < today && (
-                  <p className="text-red-500 text-xs mt-1">Due date cannot be in the past.</p>
-                )}
-              </div>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setApproveModal(null)}
-                  className="px-4 py-2 text-sm rounded-md border hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!approveModal.dueDate || approveModal.dueDate < today) {
-                      toast.error('Please select a valid future date.');
-                      return;
-                    }
-                    await handleApprove(approveModal.requestId, approveModal.dueDate);
-                    setApproveModal(null);
-                  }}
-                  className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
-                  disabled={!approveModal.dueDate || approveModal.dueDate < today}
-                >
-                  Approve
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Reject Confirmation Modal (unchanged) */}
-        {rejectTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="bg-white rounded-xl p-6 shadow-lg max-w-sm w-full">
-              <p className="text-gray-800 mb-4">
-                Are you sure you want to <span className="font-semibold text-red-700">reject</span> this request?
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setRejectTarget(null)}
-                  className="px-4 py-2 text-sm rounded-md border hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    await handleReject(rejectTarget);
-                    setRejectTarget(null);
-                  }}
-                  className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

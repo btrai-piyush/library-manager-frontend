@@ -138,7 +138,7 @@ export default function AdminDashboard() {
           icon={<Users className="w-5 h-5" />}
           label="Total Users"
           value={stats.totalUsers}
-          link="/admin/users"
+          link="/admin/students"
           iconColor="text-purple-600"
           bgColor="bg-purple-50"
         />
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
           alert={stats.pendingRequests > 0}
         />
         <StatCard
-          icon={<DollarSign className="w-5 h-5" />}
+          icon={'रु'}
           label="Unpaid Fines"
           value={stats.unpaidFines}
           link="/admin/fines"
@@ -172,20 +172,20 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Two-Column Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activity (2/3 width) */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <div className="lg:col-span-1 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-800 flex items-center gap-2">
               <Activity className="w-5 h-5 text-indigo-600" />
               Recent Activity
             </h3>
-            <Link
+            {/* <Link
               to="/admin/borrowings"
               className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
             >
               View All <ArrowRight className="w-4 h-4" />
-            </Link>
+            </Link> */}
           </div>
 
           <ul className="space-y-4">
@@ -212,16 +212,16 @@ export default function AdminDashboard() {
           <h3 className="font-semibold text-gray-800 mb-4">Quick Actions</h3>
           <div className="space-y-3">
             <QuickAction
-              to="/admin/books"
+              to="/admin/books/add"
               icon={<BookOpen className="w-5 h-5" />}
               label="Add New Book"
               description="Catalog a new title"
             />
             <QuickAction
-              to="/admin/users"
+              to="/admin/students"
               icon={<Users className="w-5 h-5" />}
-              label="View Users"
-              description="Manage patrons"
+              label="View Students"
+              description="Manage students"
             />
             <QuickAction
               to="/admin/borrow-requests"
@@ -231,7 +231,7 @@ export default function AdminDashboard() {
             />
             <QuickAction
               to="/admin/fines"
-              icon={<DollarSign className="w-5 h-5" />}
+              icon={'रु'}
               label="Manage Fines"
               description={`${stats.unpaidFines} unpaid`}
             />

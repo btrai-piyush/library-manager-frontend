@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import { PublicRoute, UserRoute, AdminRoute } from '../components/ProtectedRoutes';
-import Login from '../views/Login';
+import Login from '../views/login';
 
 import AdminDashboard from '../views/admin/dashboard';
 import AdminActiveBorrowings from '../views/admin/borrowings/ActiveBorrowings';
@@ -8,15 +8,16 @@ import AdminBorrowingHistory from '../views/admin/borrowings/BorrowingHistory';
 import PendingRequests from '../views/admin/borrow-requests/PendingRequests';
 import RequestsHistory from '../views/admin/borrow-requests/RequestsHistory';
 import UnpaidFines from '../views/admin/fines/UnpaidFines';
-import AdminFinesHistory from '../views/admin/fines/finesHistory';
+import AdminFinesHistory from '../views/admin/fines/FinesHistory';
 import AddBooks from '../views/admin/books/AddBooks';
 import AdminBrowseBooks from '../views/admin/books/BrowseBooks';
 import Students from '../views/admin/Students';
 import StudentView from '../views/admin/users/StudentView';
 import BookView from '../views/admin/books/BookView';
 
-import UserDashboard from '../views/user/Dashboard';
+import UserDashboard from '../views/user/dashboard';
 import BrowseBooks from '../views/user/BrowseBooks';
+import UserBookView from '../views/user/books/BookView';
 import ActiveBorrowings from '../views/user/borrowings/ActiveBorrowings';
 import BorrowingHistory from '../views/user/borrowings/BorrowingHistory';
 import ActiveFines from '../views/user/fines/ActiveFines';
@@ -141,7 +142,9 @@ const router = createBrowserRouter(
 
                 // Standalone routes (no nesting)
                 { path: "browse-books", element: <BrowseBooks /> },
-                { path: "profile", element: <Profile /> }
+                { path: "profile", element: <Profile /> },
+                { path: "books/:bookId", element: <UserBookView /> }
+
             ]
         },
         {
