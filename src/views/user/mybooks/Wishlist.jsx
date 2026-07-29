@@ -3,6 +3,7 @@ import { wishlistApi, bookRequestApi } from '../../../api/Api';
 import { Eye, Trash2, Send, Search, BookMarked, Loader2 } from 'lucide-react';
 import Pagination from '../../../components/Pagination';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 export default function Wishlist() {
   const [books, setBooks] = useState([]);
@@ -12,6 +13,7 @@ export default function Wishlist() {
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const pageSize = 20;
+  const navigate = useNavigate();
 
   const user = localStorage.getItem('librarymanager.auth.user');
   const userId = user ? JSON.parse(user).id : null;
@@ -142,15 +144,18 @@ export default function Wishlist() {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 hidden md:table-cell">{book.publisher}</td>
                     <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        book.availableCopies > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${book.availableCopies > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
                         {book.availableCopies ?? 0}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-3">
-                        <button className="text-gray-400 hover:text-blue-600" title="View details">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 hover:cursor-pointer"
+                          title="View Details"
+                          onClick={() => navigate(`/user/books/${book.id}`)}
+                        >
                           <Eye className="w-5 h-5" />
                         </button>
                         <button className="text-gray-400 hover:text-red-600" title="Remove" onClick={() => setDeleteTarget(book.id)}>

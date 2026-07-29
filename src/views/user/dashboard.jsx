@@ -19,6 +19,8 @@ import {
   XCircle,
 } from 'lucide-react';
 import { commonApi } from '../../api/Api';
+import { toast } from 'react-toastify';
+import {wishlistApi} from '../../api/Api';
 
 export default function UserDashboard() {
   const { user } = useSelector((state) => state.auth);
@@ -27,6 +29,17 @@ export default function UserDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const handleWishlist = async (bookId) => {
+      const body = { userId, bookId };
+      try {
+        var response = await wishlistApi.addToWishlist(body);
+        toast.success('Book added to wishlist!');
+      } catch (error) {
+        console.error('Error adding book to wishlist:', error);
+        toast.error(error.message);
+      }
+    }
 
   useEffect(() => {
     if (!userId) return;
@@ -153,7 +166,7 @@ export default function UserDashboard() {
           <div className="flex-1">
             <h3 className="font-semibold text-yellow-800">You have unpaid fines</h3>
             <p className="text-yellow-700 text-sm">
-              {unpaidFines} fine{unpaidFines > 1 ? 's' : ''} totaling $
+              {unpaidFines} fine{unpaidFines > 1 ? 's' : ''} totaling रु
               {unpaidFinesAmount.toFixed(2)}. Please resolve them at the library or contact support.
             </p>
           </div>
@@ -178,9 +191,9 @@ export default function UserDashboard() {
           bgColor="bg-blue-50"
         />
         <StatCard
-          icon={<DollarSign className="w-5 h-5" />}
+          icon={'रु'}
           label="Unpaid Fines"
-          value={`$${unpaidFinesAmount.toFixed(2)}`}
+          value={`रु${unpaidFinesAmount.toFixed(2)}`}
           sub={unpaidFines > 0 ? `${unpaidFines} fine(s)` : null}
           link="/user/fines/active"
           iconColor="text-red-600"
@@ -286,12 +299,12 @@ export default function UserDashboard() {
               <BookOpen className="w-5 h-5 text-indigo-600" />
               Recommended for You
             </h3>
-            <Link
+            {/* <Link
               to="/user/browse-books"
               className="text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
             >
               Browse All <ArrowRight className="w-4 h-4" />
-            </Link>
+            </Link> */}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -316,10 +329,7 @@ export default function UserDashboard() {
                   <button
                     className="p-1.5 rounded-full hover:bg-pink-50 text-gray-400 hover:text-pink-600 transition-colors"
                     title="Add to Wishlist"
-                    onClick={() => {
-                      // Implement wishlist add logic if needed
-                      console.log('Add to wishlist:', book.id);
-                    }}
+                    onClick={() => {handleWishlist(book.id);}}
                   >
                     <Heart className="w-4 h-4" />
                   </button>
@@ -335,7 +345,7 @@ export default function UserDashboard() {
         <h3 className="font-semibold text-gray-800 mb-4">Quick Links</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <QuickLink to="/user/borrowings/active" icon={<BookOpen className="w-5 h-5" />} label="Borrowings" />
-          <QuickLink to="/user/fines/active" icon={<DollarSign className="w-5 h-5" />} label="Fines" />
+          <QuickLink to="/user/fines/active" icon={'रु'} label="Fines" />
           <QuickLink to="/user/books/wishlist" icon={<Heart className="w-5 h-5" />} label="Wishlist" />
           <QuickLink to="/user/profile" icon={<User className="w-5 h-5" />} label="Profile" />
         </div>

@@ -8,6 +8,7 @@ import {
   Search,
   Filter,
   Calendar,
+  ArrowUpDown,
 } from 'lucide-react';
 import Pagination from '../../../components/Pagination';
 import { toast } from 'react-toastify';
@@ -19,15 +20,17 @@ export default function PendingRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Search & pagination (server-side)
+  // Search, sorting & pagination
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [pageNumber, setPageNumber] = useState(0);   // 0‑based
+  const [sortBy, setSortBy] = useState('requestDate');
+  const [isDescending, setIsDescending] = useState(true);
+  const [pageNumber, setPageNumber] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   // Modals
-  const [approveModal, setApproveModal] = useState(null); // { requestId, dueDate }
+  const [approveModal, setApproveModal] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
 
   // Debounce search term
@@ -38,6 +41,11 @@ export default function PendingRequests() {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
+  // Reset page when search, sort, or order changes
+  useEffect(() => {
+    setPageNumber(0);
+  }, [debouncedSearchTerm, sortBy, isDescending]);
+
   // Fetch requests from server
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -45,8 +53,8 @@ export default function PendingRequests() {
     try {
       const body = {
         searchTerm: debouncedSearchTerm,
-        sortBy: 'requestDate',    // adjust if needed
-        isDescending: true,       // newest first
+        sortBy,
+        isDescending,
         pageNumber: pageNumber + 1,
         pageSize: PAGE_SIZE,
       };
@@ -57,27 +65,29 @@ export default function PendingRequests() {
 
       setRequests(items);
       setTotalCount(total);
-      setTotalPages(Math.ceil(total / PAGE_SIZE));
+      setTotalPages(Math.ceil(total / PAGE_SIZE) || 1);
     } catch (err) {
       console.error('Error fetching borrow requests:', err);
       setError('Failed to load requests. Please try again later.');
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearchTerm, pageNumber]);
+  }, [debouncedSearchTerm, sortBy, isDescending, pageNumber]);
 
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
 
-  // Reset page when search changes
-  useEffect(() => {
-    setPageNumber(0);
-  }, [debouncedSearchTerm]);
-
-  // Page change handler (convert 1‑based -> 0‑based)
   const handlePageChange = (newPage) => {
     setPageNumber(newPage - 1);
+  };
+
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+  };
+
+  const toggleOrder = () => {
+    setIsDescending(!isDescending);
   };
 
   // Approve
@@ -139,11 +149,11 @@ export default function PendingRequests() {
             Borrow Requests
           </h1>
           <p className="mt-2 text-gray-600 max-w-4xl">
-            Manage all book requests from users. Approve or reject pending requests here.
+            Manage all pending book requests from users. Approve or reject requests, and sort by various fields.
           </p>
         </div>
 
-        {/* Search Bar */}
+        {/* Search & Sort Bar */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -155,13 +165,41 @@ export default function PendingRequests() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
             />
           </div>
-          <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            onClick={() => setSearchTerm('')}
-          >
-            <Filter className="w-5 h-5" />
-            Clear
-          </button>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={sortBy}
+              onChange={handleSortChange}
+              className="py-2 px-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white"
+            >
+              <option value="requestDate">Request Date</option>
+              <option value="status">Status</option>
+              <option value="title">Book Title</option>
+            </select>
+
+            <button
+              onClick={toggleOrder}
+              className="inline-flex items-center gap-1 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              title={isDescending ? 'Descending' : 'Ascending'}
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              <span className="text-sm text-gray-700">
+                {isDescending ? 'Descending' : 'Ascending'}
+              </span>
+            </button>
+
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              onClick={() => {
+                setSearchTerm('');
+                setSortBy('requestDate');
+                setIsDescending(true);
+              }}
+            >
+              <Filter className="w-5 h-5" />
+              Clear
+            </button>
+          </div>
         </div>
 
         {/* Requests Table */}
@@ -170,9 +208,9 @@ export default function PendingRequests() {
             <div>
               <h2 className="text-lg font-semibold text-gray-800">All Requests</h2>
               <p className="text-sm text-gray-500">
-                Showing {(pageNumber * PAGE_SIZE) + 1}–
-                {Math.min((pageNumber + 1) * PAGE_SIZE, totalCount)} of{' '}
-                {totalCount} requests
+                {totalCount > 0
+                  ? `Showing ${(pageNumber * PAGE_SIZE) + 1}–${Math.min((pageNumber + 1) * PAGE_SIZE, totalCount)} of ${totalCount} requests`
+                  : 'No requests found'}
               </p>
             </div>
             <div className="hidden sm:block">
@@ -186,7 +224,7 @@ export default function PendingRequests() {
 
           {requests.length === 0 ? (
             <div className="px-6 py-12 text-center text-gray-500">
-              {searchTerm ? 'No requests match your search.' : 'No borrow requests yet.'}
+              {searchTerm ? 'No requests match your search.' : 'No pending requests.'}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -273,13 +311,6 @@ export default function PendingRequests() {
                         {req.status === 'Pending' ? (
                           <div className="flex items-center justify-center space-x-3">
                             <button
-                              className="text-gray-400 hover:text-blue-600 transition-colors"
-                              title="View details"
-                              onClick={() => console.log('View request', req.id)}
-                            >
-                              <Eye className="w-5 h-5" />
-                            </button>
-                            <button
                               className="text-gray-400 hover:text-green-600 transition-colors"
                               title="Approve request"
                               onClick={() => setApproveModal({ requestId: req.id, dueDate: '' })}
@@ -321,7 +352,7 @@ export default function PendingRequests() {
           )}
         </div>
 
-        {/* Approve Modal with Due Date (unchanged) */}
+        {/* Approve Modal with Due Date */}
         {approveModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="bg-white rounded-xl p-6 shadow-lg max-w-sm w-full">
@@ -378,7 +409,7 @@ export default function PendingRequests() {
           </div>
         )}
 
-        {/* Reject Confirmation Modal (unchanged) */}
+        {/* Reject Confirmation Modal */}
         {rejectTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="bg-white rounded-xl p-6 shadow-lg max-w-sm w-full">

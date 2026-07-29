@@ -1,11 +1,13 @@
-import React, { useEffect,useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { wishlistApi } from '../../api/Api';
 import Pagination from '../../components/Pagination';
+import { useNavigate } from 'react-router-dom';
 
 export default function WishlistTable({ books }) {
     const [pageNumber, setPageNumber] = useState(appliedFilters.pageNumber || 1);
-      const pageSize = 20;
-    
+    const pageSize = 20;
+    const navigate = useNavigate();
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="max-w-7xl mx-auto px-6 py-8">
@@ -80,7 +82,11 @@ export default function WishlistTable({ books }) {
                                         </td>
                                         <td className="px-6 py-4 text-sm font-medium">
                                             <div className="flex items-center">
-                                                <button className="text-blue-600 hover:text-blue-900 hover:cursor-pointer" title="View Details">
+                                                <button
+                                                    className="text-blue-600 hover:text-blue-900 hover:cursor-pointer"
+                                                    title="View Details"
+                                                    onClick={() => navigate(`/user/books/${book.id}`)}
+                                                >
                                                     <Eye className="w-5 h-5" />
                                                 </button>
                                                 <button className="ml-4 text-green-600 hover:text-green-900 hover:cursor-pointer" onClick={() => handleWishlistAdd(book.id)} title="Add to Wishlist">
